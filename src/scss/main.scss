@@ -1,2 +1,9 @@
 @import './plagins/slick.scss';
 @import './plagins/slick-theme.scss';
+
+.item-tab {
+	background-color: #eee;
+	padding: 5px 10px;
+	margin: 10px;
+	cursor: pointer;
+}
