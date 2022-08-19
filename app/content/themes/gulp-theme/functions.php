@@ -29,6 +29,30 @@ function remove_styles()
 add_action('wp_print_styles', 'remove_styles', 100);
 
 
+function add_custom_taxonomies()
+{
+	register_taxonomy('camp-ages', ['camp'], [
+		'hierarchical' => true,
+		'label'        => 'Возрастная категория',
+		'show_in_nav_menus' => true,
+		'rewrite'      => ['slug' => 'camp-ages']
+	]);
+	register_taxonomy('camp-period', ['camp'], [
+		'hierarchical' => true,
+		'label'        => 'Период смен',
+		'show_in_nav_menus' => true,
+		'rewrite'      => ['slug' => 'camp-period']
+	]);
+	register_taxonomy('camp-section', ['camp'], [
+		'hierarchical' => true,
+		'label'        => 'Раздел лагеря',
+		'rewrite'      => ['slug' => 'camp-section'],
+		'public' => true,
+		'show_in_nav_menus' => true
+	]);
+}
+add_action('init', 'add_custom_taxonomies');
+
 function my_custom_post_camp()
 {
 	$labels = [
@@ -58,25 +82,22 @@ function my_custom_post_camp()
 add_action('init', 'my_custom_post_camp');
 
 
-function add_custom_taxonomies()
-{
-	register_taxonomy('camp-ages', ['camp'], [
-		'hierarchical' => true,
-		'label'        => 'Возрастная категория',
-		'rewrite'      => ['slug' => 'camp-ages']
+
+
+add_action('after_setup_theme', function () {
+	register_nav_menus([
+		'header_menu' => 'Меню в шапке',
+		'footer_menu' => 'Меню в подвале'
 	]);
-	register_taxonomy('camp-period', ['camp'], [
-		'hierarchical' => true,
-		'label'        => 'Период смен',
-		'rewrite'      => ['slug' => 'camp-period']
-	]);
-	register_taxonomy('camp-section', ['camp'], [
-		'hierarchical' => true,
-		'label'        => 'Раздел лагеря',
-		'rewrite'      => ['slug' => 'camp-section']
-	]);
-}
-add_action('init', 'add_custom_taxonomies');
+});
+
+add_theme_support( 'post-thumbnails', [ 'post' ] );
+
+
+
+
+
+
 
 
 require get_template_directory() . '/api/art-api.php';
