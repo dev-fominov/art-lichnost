@@ -10,13 +10,14 @@
 
 	const menuTab = $('.menu-tab')
 	const contentTab = $('.content-tab')
+	const root = $('.root')
 
-	fetch('http://art.loc/wp-json/art/v1/page/home')
+	fetch('http://art.loc/wp-json/art/v1/page/blogs')
 		.then(response => response.json())
 		.then(cards => {
 			console.log(cards)
 			// contentTabAdded(cards, cards[0].id)
-			return ( console.log(cards))
+			return root.html(`<div>Title: ${cards[0].id}</div>`)
 		})
 
 	// $('#camp').on('click', '.item-tab', function () {

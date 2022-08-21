@@ -27,6 +27,10 @@ add_action('rest_api_init', function () {
 		'methods' => 'GET',
 		'callback' => 'art_page_blogs',
 	]);
+	register_rest_route('art/v1', 'page/psychologist', [
+		'methods' => 'GET',
+		'callback' => 'art_page_psychologist',
+	]);
 });
 
 function art_page_contacts()
@@ -71,7 +75,8 @@ function art_page_home()
 	$sections = [];
 
 	$id_front_page = get_option('page_on_front');
-	$id_contacts = 70;
+	$my_page = get_page_by_path('contacts', OBJECT, 'page');
+	$id_contacts = $my_page->ID;
 
 	$phone = get_field('phone', $id_contacts);
 	$e_mail = get_field('e-mail', $id_contacts);
@@ -116,11 +121,11 @@ function art_page_blogs()
 	$data = [];
 
 	$args = [
-		'post_type' => 'post'
+		'post_type' => 'post',
+		'numberposts' 	=> 6,
 	];
 
 	$posts = get_posts($args);
-	$data = [];
 	$i = 0;
 
 	foreach ($posts as $post) {
@@ -139,6 +144,89 @@ function art_page_blogs()
 		$i++;
 	}
 
+
+	return $data;
+}
+
+function art_page_psychologist()
+{
+	$data = [];
+
+	$my_page = get_page_by_path('psychologist', OBJECT, 'page');
+	$id_page = $my_page->ID;
+
+	$post = get_post($id_page);
+	$content = apply_filters('the_content', $post->post_content);
+	$title_first = get_field('title_psychologist', $id_page);
+
+	$get_resolved = get_field('issues_resolved', $id_page);
+
+	foreach ($get_resolved['vaprosy_1'] as $item) {
+		$vaprosy_1[] = $item['vopros'];
+	}
+	foreach ($get_resolved['price_1'] as $item) {
+		$price_1[] = $item['price'];
+	}
+
+	$for_kids = [
+		'vaprosy_1' => $vaprosy_1,
+		'price_1' => $price_1
+	];
+	
+	foreach ($get_resolved['vaprosy_2'] as $item) {
+		$vaprosy_2[] = $item['vopros'];
+	}
+	foreach ($get_resolved['price_2'] as $item) {
+		$price_2[] = $item['price'];
+	}
+
+	$for_parents = [
+		'vaprosy_1' => $vaprosy_2,
+		'price_1' => $price_2
+	];
+
+	$issues_addressed = [
+		'for_kids' => $for_kids,
+		'for_parents' => $for_parents
+	];
+
+	$title_psychologist_art_lichnost = get_field('title_psychologist_art_lichnost', $id_page);
+	$psihologi_art_lichnosti = get_field('psihologi_art_lichnosti', $id_page);
+
+	foreach ($psihologi_art_lichnosti as $item) {
+		$image_item = ['url' => $item['izobrazhenie']['url'], 'alt' => $item['izobrazhenie']['title']];
+		$title_item = $item['imya'];
+		$description = $item['opisanie'];
+		$job_title = $item['dolzhnost'];
+
+		$psihologi_art[] = [
+			'image' => $image_item,
+			'title_item' => $title_item,
+			'job_title' => $job_title,
+			'description' => $description,
+		];
+	}
+
+	$steps_form_title = get_field('steps-form-title', $id_page);
+	$steps_form = get_field('steps-form', $id_page);
+
+	foreach ($steps_form as $item) {
+		$steps_form_items[] = $item['title'];
+	}
+
+	$img_steps_form = get_field('bg-form-psychologist', $id_page);
+
+	$data['id_page'] = $id_page;
+	$data['content'] = $content;
+	$data['title_first'] = $title_first;
+	$data['issues_addressed'] = $issues_addressed;
+
+	$data['title_psychologist_art_lichnost'] = $title_psychologist_art_lichnost;
+	$data['psihologi_art_lichnosti'] = $psihologi_art;
+
+	$data['steps_form_title'] = $steps_form_title;
+	$data['steps_form_items'] = $steps_form_items;
+	$data['img_steps_form'] = ['url' => $img_steps_form['url'], 'alt' => $img_steps_form['title']];
 
 	return $data;
 }
