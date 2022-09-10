@@ -27,6 +27,10 @@ add_action('rest_api_init', function () {
 		'methods' => 'GET',
 		'callback' => 'art_page_blogs',
 	]);
+	register_rest_route('art/v1', 'page/blogs/(?P<slug>[a-zA-Z0-9-]+)', [
+		'methods' => 'GET',
+		'callback' => 'art_page_blogs_post',
+	]);
 	register_rest_route('art/v1', 'page/psychologist', [
 		'methods' => 'GET',
 		'callback' => 'art_page_psychologist',
@@ -138,12 +142,32 @@ function art_page_blogs()
 		$data[$i]['title'] = $post->post_title;
 		$data[$i]['the_excerpt'] = $the_excerpt;
 		$data[$i]['get_the_post_thumbnail_url'] = $get_the_post_thumbnail_url;
-		$data[$i]['content'] = $post->post_content;
-		$data[$i]['the_permalink'] = $post->post_name;
+		$data[$i]['slug'] = $post->post_name;
 
 		$i++;
 	}
 
+
+	return $data;
+}
+
+function art_post($slug)
+{
+	$data = [];
+	$args = [
+		'post_type' => 'post',
+		'name' 	=> $slug['slug'],
+	];
+	$post = get_posts($args);
+	$id = $post[0]->ID;
+	$get_the_post_thumbnail_url = get_the_post_thumbnail_url($id);
+
+	// Added to api
+	$data['id'] = $id;
+	$data['title'] = $post[0]->post_title;
+	$data['get_the_post_thumbnail_url'] = $get_the_post_thumbnail_url;
+	$data['content'] = $post[0]->post_content;
+	$data['slug'] = $post[0]->post_name;
 
 	return $data;
 }
@@ -172,7 +196,7 @@ function art_page_psychologist()
 		'vaprosy_1' => $vaprosy_1,
 		'price_1' => $price_1
 	];
-	
+
 	foreach ($get_resolved['vaprosy_2'] as $item) {
 		$vaprosy_2[] = $item['vopros'];
 	}

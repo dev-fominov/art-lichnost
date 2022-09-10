@@ -1,0 +1,86 @@
+********************************************************************************
+DUPLICATOR-LITE PACKAGE-LOG: 22.08.2022 04:57
+NOTICE: Do NOT post to public sites or forums 
+********************************************************************************
+VERSION:	1.4.7.1
+WORDPRESS:	6.0.1
+PHP INFO:	7.3.9 | SAPI: apache2handler
+SERVER:		Apache 
+PHP TIME LIMIT: (0) no time limit imposed 
+PHP MAX MEMORY: 4294967296 (1536M default) 
+MEMORY STACK: 6MB
+
+********************************************************************************
+DATABASE:
+********************************************************************************
+BUILD MODE:   MYSQLDUMP
+MYSQLTIMEOUT: 5000
+MYSQLDUMP:    Is Supported
+SQL CREATED: 20220814_art_e86876dee11ca4ce8510_20220822045722_database.sql
+SQL FILE SIZE: 797.35KB (816488)
+SQL FILE TIME: 2022-08-22 04:57:52
+SQL RUNTIME: 3.33 sec.
+
+********************************************************************************
+ARCHIVE (ZIP):
+********************************************************************************
+ARCHIVE DIR:  E:/OSPanel/domains/art.loc/app/wp
+ARCHIVE FILE: 20220814_art_e86876dee11ca4ce8510_20220822045722_archive.zip
+FILTERS: *OFF*
+DIRS:
+	not set
+FILES:
+	not set
+EXTS:  not set
+----------------------------------------
+COMPRESSING
+SIZE:	94.39MB
+STATS:	Dirs 581 | Files 4,366
+SQL ADDED: 20220814_art_e86876dee11ca4ce8510_20220822045722_database.sql
+ZipArchive Object
+(
+    [status] => 0
+    [statusSys] => 0
+    [numFiles] => 4947
+    [filename] => E:\OSPanel\domains\art.loc\app\content\backups-dup-lite\tmp\20220814_art_e86876dee11ca4ce8510_20220822045722_archive.zip
+    [comment] => 
+)
+
+FILE ADDED TO ZIP: 4946
+[PHP ERR][NOTICE] MSG:ob_flush(): failed to flush buffer. No buffer to flush [CODE:8|FILE:E:\OSPanel\domains\art.loc\app\content\plugins\duplicator\classes\utilities\class.u.php|LINE:171]
+do_action('wp_ajax_duplicator_package_build'), WP_Hook->do_action, WP_Hook->apply_filters, duplicator_package_build, DUP_Package->runZipBuild, DUP_Archive->build, DUP_Zip::create, DUP_Util::fcgiFlush, ob_flush, DUP_Handler::error, DUP_Handler::getMessage
+COMPRESSION RESULT: '1'
+COMPRESSED SIZE: 39.97MB
+ARCHIVE RUNTIME: 55.16 sec.
+MEMORY STACK: 8MB
+building installer
+add_extra_files1
+add_extra_files2
+add_extra_files3
+add_extra_files4
+Doing archive file check
+add_extra_files5
+add_extra_files6
+add_extra_files8
+Successfully opened zip E:/OSPanel/domains/art.loc/app/content/backups-dup-lite/tmp/20220814_art_e86876dee11ca4ce8510_20220822045722_archive.zip
+Adding enhanced installer files to archive using ZipArchive
+Installer files added to archive
+Added to archive
+After ziparchive close when adding installer
+
+********************************************************************************
+INTEGRITY CHECKS:
+********************************************************************************
+SQL FILE: 797.35KB
+INSTALLER FILE: 64.73KB
+ARCHIVE FILE: 41MB 
+EXPECTED FILE/DIRECTORY COUNT: 4,947
+ACTUAL FILE/DIRECTORY COUNT: 4,946
+ARCHIVE CONSISTENCY TEST: Pass
+
+********************************************************************************
+RECORD ID:[2]
+TOTAL PROCESS RUNTIME: 59.57 sec.
+PEAK PHP MEMORY USED: 8MB
+DONE PROCESSING => 20220814_art 22.08.2022 04:58
+
