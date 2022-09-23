@@ -18,24 +18,225 @@ add_action('rest_api_init', function () {
 	register_rest_route('art/v1', 'page/contacts', [
 		'methods' => 'GET',
 		'callback' => 'art_page_contacts',
+		'permission_callback' => '__return_true'
 	]);
 	register_rest_route('art/v1', 'page/home', [
 		'methods' => 'GET',
 		'callback' => 'art_page_home',
+		'permission_callback' => '__return_true'
 	]);
 	register_rest_route('art/v1', 'page/blogs', [
 		'methods' => 'GET',
 		'callback' => 'art_page_blogs',
+		'permission_callback' => '__return_true'
 	]);
 	register_rest_route('art/v1', 'page/blogs/(?P<slug>[a-zA-Z0-9-]+)', [
 		'methods' => 'GET',
 		'callback' => 'art_page_blogs_post',
+		'permission_callback' => '__return_true'
 	]);
 	register_rest_route('art/v1', 'page/psychologist', [
 		'methods' => 'GET',
 		'callback' => 'art_page_psychologist',
+		'permission_callback' => '__return_true'
+	]);
+
+	// Лагеря
+	register_rest_route('art/v1', 'page/camp', [
+		'methods' => 'GET',
+		'callback' => 'art_page_camp',
+		'permission_callback' => '__return_true'
+	]);
+
+	register_rest_route('art/v1', 'camp/filter', [
+		'methods' => 'GET',
+		'callback' => 'art_camp_filter',
+		'permission_callback' => '__return_true'
 	]);
 });
+
+function art_camp_filter($params)
+{
+
+	$age = !empty($params->get_param('age')) ? $params->get_param('age') : null;
+	$section = !empty($params->get_param('section')) ? $params->get_param('section') : null;
+	$period = !empty($params->get_param('period')) ? $params->get_param('period') : null;
+	$certificate = !empty($params->get_param('certificate')) ? $params->get_param('certificate') : null;
+
+	$args = [
+		'post_type' 			=> 'camp',
+		'posts_per_page' 	=> '-1',
+		'post_status' 		=> 'publish'
+	];
+
+	// Filter params AGE
+	if (isset($age) && $age != 'all') {
+		$args['tax_query'][] = array(
+			'taxonomy' => 'camp-ages',
+			'field'    => 'slug',
+			'terms'    => $age
+		);
+	} else {
+		$args['tax_query'][] = array(
+			'taxonomy' => 'camp-ages',
+			'operator' => 'EXISTS'
+		);
+	}
+
+	// Filter params PERIOD
+	if (isset( $period ) && $period != 'all') {
+		$args['meta_query'][] = array(
+			'key' => 'period',
+			'value' => $period,
+			'type' => 'CHAR',
+			'compare' => 'REGEXP'
+		);
+	}
+
+	// Filter params SECTION
+	if (isset($section) && $section != 'all') {
+		$args['tax_query'][] = array(
+			'taxonomy' => 'camp-section',
+			'field'    => 'slug',
+			'terms'    => $section
+		);
+	} else {
+		$args['tax_query'][] = array(
+			'taxonomy' => 'camp-section',
+			'operator' => 'EXISTS'
+		);
+	}
+
+	// Filter params CERTIFICATE
+	if( isset( $certificate ) && $certificate == '1' ) {
+		$args['meta_query'][] = array(
+			'key' => 'nalichie_sertifikata',
+			'value' => 1,
+			'compare' => 'IN'
+		);
+	} else {
+		$args['meta_query'][] = array(
+			'key' => 'nalichie_sertifikata',
+			'value' => 0,
+			'compare' => 'IN'
+		);
+	}
+
+	$camps = new WP_Query($args);
+
+	$data = [];
+	$i = 0;
+
+	foreach ($camps->posts as $camp) {
+		$id = $camp->ID;
+		$thumbnail = get_field('image_miniatyura', $id);
+
+		$data[$i]['id'] = $id;
+		$data[$i]['title'] = $camp->post_title;
+		$data[$i]['subtitle'] = get_field('location', $id);
+		$data[$i]['slug'] = $camp->post_name;
+		$data[$i]['thumbnail'] = ['url' => $thumbnail['url'], 'alt' => $thumbnail['title']];
+
+		$i++;
+	}
+
+	return $data;
+}
+
+function art_page_camp()
+{
+	$data = [];
+
+	$my_page = get_page_by_path('camp', OBJECT, 'page');
+	$id_page = $my_page->ID;
+
+	$post = get_post($id_page);
+	$content = apply_filters('the_content', $post->post_content);
+
+	$arrayCamps = null;
+
+	$terms = get_terms([
+		'taxonomy' => 'camp-section',
+		'hide_empty' => false,
+	]);
+
+	foreach ($terms as $term) {
+
+		$args = [
+			'post_type' => 'camp',
+			'numberposts' 	=> -1,
+			'tax_query' => [[
+				'taxonomy' => 'camp-section',
+				'field'    => 'slug',
+				'terms'    => $term->slug
+			]],
+		];
+
+		$camps = query_posts($args);
+
+		$newCamps = [];
+
+		foreach ($camps as $camp) {
+
+			$id = $camp->ID;
+
+			$image_miniatyura = get_field('image_miniatyura', $id);
+
+			$newCamps[] = [
+				'ID' => $id,
+				'post_title' => $camp->post_title,
+				'post_slug' => $camp->post_name,
+				'thumbnail' => ['url' => $image_miniatyura['url'], 'alt' => $image_miniatyura['title']],
+				'location' => get_field('location', $id)
+			];
+		}
+
+		$arrayCamps[] = [
+			'term_id' => $term->term_id,
+			'name' => $term->name,
+			'slug' => $term->slug,
+			'description' => $term->description,
+			'count' => $term->count,
+			'camp_card' => $newCamps
+		];
+	}
+
+	$review = '';
+
+	$merch = [
+		'title' => get_field('title_merch', $id_page),
+		'description' => get_field('description_merch', $id_page),
+		'image' => ['url' => get_field('image_merch', $id_page)['url'], 'alt' => get_field('image_merch', $id_page)['title']],
+	];
+
+	$arrayDocs = null;
+	$argsDocs = [
+		'post_type' => 'docs'
+	];
+
+	$docs = query_posts($argsDocs);
+
+	foreach ($docs as $doc) {
+
+		$id = $doc->ID;
+
+		$arrayDocs[] = [
+			'id' => $id,
+			'slug' => $doc->post_name,
+			'title' => $doc->post_title,
+			'subtitle' => get_field('subtitle_docs', $id)
+		];
+	}
+
+	$data['id_page'] = $id_page;
+	$data['content'] = $content;
+	$data['camps'] = $arrayCamps;
+	$data['review'] = $review;
+	$data['merch'] = $merch;
+	$data['docs'] = $arrayDocs;
+
+	return $data;
+}
 
 function art_page_contacts()
 {
@@ -43,7 +244,8 @@ function art_page_contacts()
 	$data = [];
 	$gallery_contacts = [];
 
-	$id_contacts = 70;
+	$my_page = get_page_by_path('contacts', OBJECT, 'page');
+	$id_contacts = $my_page->ID;
 
 	$phone = get_field('phone', $id_contacts);
 	$e_mail = get_field('e-mail', $id_contacts);
@@ -129,6 +331,8 @@ function art_page_blogs()
 		'numberposts' 	=> 6,
 	];
 
+	// $img_steps_form = get_field('bg-form-psychologist', $id_page);
+
 	$posts = get_posts($args);
 	$i = 0;
 
@@ -151,7 +355,7 @@ function art_page_blogs()
 	return $data;
 }
 
-function art_post($slug)
+function art_page_blogs_post($slug)
 {
 	$data = [];
 	$args = [
@@ -162,11 +366,15 @@ function art_post($slug)
 	$id = $post[0]->ID;
 	$get_the_post_thumbnail_url = get_the_post_thumbnail_url($id);
 
+	$content = $post[0]->post_content;
+	$content = apply_filters('the_content', $content);
+	$content = str_replace(']]>', ']]&gt;', $content);
+
 	// Added to api
 	$data['id'] = $id;
 	$data['title'] = $post[0]->post_title;
 	$data['get_the_post_thumbnail_url'] = $get_the_post_thumbnail_url;
-	$data['content'] = $post[0]->post_content;
+	$data['content'] = $content;
 	$data['slug'] = $post[0]->post_name;
 
 	return $data;

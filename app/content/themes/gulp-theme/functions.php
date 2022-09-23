@@ -53,6 +53,7 @@ function add_custom_taxonomies()
 }
 add_action('init', 'add_custom_taxonomies');
 
+// Camp
 function my_custom_post_camp()
 {
 	$labels = [
@@ -81,7 +82,34 @@ function my_custom_post_camp()
 }
 add_action('init', 'my_custom_post_camp');
 
-
+// Docoments
+function my_custom_post_docs()
+{
+	$labels = [
+		'name'               => 'Документы',
+		'singular_name'      => 'Документы',
+		'add_new'            => 'Добавить документ',
+		'add_new_item'       => 'Добавить',
+		'edit_item'          => 'Редактировать',
+		'new_item'           => 'Новый документ',
+		'all_items'          => 'Все документы',
+		'view_item'          => 'Посмотреть',
+		'search_items'       => 'Искать',
+		'not_found'          => 'Документ не найден',
+		'not_found_in_trash' => 'Документ не найден',
+		'parent_item_colon'  => '',
+		'menu_name'          => 'Список документов'
+	];
+	$args = [
+		'labels'        => $labels,
+		'public'        => true,
+		'rewrite'       => ['slug' => 'docs'],
+		'supports'      => ['title'],
+		'has_archive'   => true
+	];
+	register_post_type('docs', $args);
+}
+add_action('init', 'my_custom_post_docs');
 
 
 add_action('after_setup_theme', function () {
