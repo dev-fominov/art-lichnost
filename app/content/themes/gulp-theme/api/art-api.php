@@ -55,6 +55,9 @@ add_action('rest_api_init', function () {
 	]);
 });
 
+
+
+
 function art_camp_filter($params)
 {
 
@@ -69,7 +72,7 @@ function art_camp_filter($params)
 		'post_status' 		=> 'publish'
 	];
 
-	// Filter params AGE
+	// // Filter params AGE
 	if (isset($age) && $age != 'all') {
 		$args['tax_query'][] = array(
 			'taxonomy' => 'camp-ages',
@@ -83,8 +86,8 @@ function art_camp_filter($params)
 		);
 	}
 
-	// Filter params PERIOD
-	if (isset( $period ) && $period != 'all') {
+	// // Filter params PERIOD
+	if (isset($period) && $period != 'all') {
 		$args['meta_query'][] = array(
 			'key' => 'period',
 			'value' => $period,
@@ -93,7 +96,7 @@ function art_camp_filter($params)
 		);
 	}
 
-	// Filter params SECTION
+	// // Filter params SECTION
 	if (isset($section) && $section != 'all') {
 		$args['tax_query'][] = array(
 			'taxonomy' => 'camp-section',
@@ -107,17 +110,25 @@ function art_camp_filter($params)
 		);
 	}
 
-	// Filter params CERTIFICATE
-	if( isset( $certificate ) && $certificate == '1' ) {
-		$args['meta_query'][] = array(
-			'key' => 'nalichie_sertifikata',
-			'value' => 1,
-			'compare' => 'IN'
-		);
+	// // Filter params CERTIFICATE
+	if ($certificate) {
+		if ($certificate == '1') {
+			$args['meta_query'][] = array(
+				'key' => 'nalichie_sertifikata',
+				'value' => 1,
+				'compare' => 'IN'
+			);
+		} else {
+			$args['meta_query'][] = array(
+				'key' => 'nalichie_sertifikata',
+				'value' => 0,
+				'compare' => 'IN'
+			);
+		}
 	} else {
 		$args['meta_query'][] = array(
 			'key' => 'nalichie_sertifikata',
-			'value' => 0,
+			'value' => 1,
 			'compare' => 'IN'
 		);
 	}
@@ -132,6 +143,7 @@ function art_camp_filter($params)
 		$thumbnail = get_field('image_miniatyura', $id);
 
 		$data[$i]['id'] = $id;
+		$data[$i]['$certificate'] = $certificate;
 		$data[$i]['title'] = $camp->post_title;
 		$data[$i]['subtitle'] = get_field('location', $id);
 		$data[$i]['slug'] = $camp->post_name;
@@ -149,6 +161,9 @@ function art_page_camp()
 
 	$my_page = get_page_by_path('camp', OBJECT, 'page');
 	$id_page = $my_page->ID;
+
+	$background_img = ['url' => get_field('image_page_camp', $id_page)['url'], 'alt' => get_field('image_page_camp', $id_page)['title']];
+	$background_video = get_field('video_page_camp', $id_page);
 
 	$post = get_post($id_page);
 	$content = apply_filters('the_content', $post->post_content);
@@ -228,12 +243,68 @@ function art_page_camp()
 		];
 	}
 
+	$filter = null;
+
+	function build_sorter($key)
+	{
+		return function ($a, $b) use ($key) {
+			return strnatcmp($a[$key], $b[$key]);
+		};
+	}
+
+	$camp_ages = get_terms([
+		'taxonomy' => 'camp-ages',
+		'hide_empty' => false,
+		'parent' => 0
+	]);
+
+	$camp_section = get_terms([
+		'taxonomy' => 'camp-section',
+		'hide_empty' => false,
+		'parent' => 0
+	]);
+
+	foreach ($camp_ages as $age) {
+		$filter['age'][] = [
+			'id' => $age->term_id,
+			'name' => $age->name,
+			'slug' => $age->slug,
+		];
+	}
+
+	foreach ($camp_section as $section) {
+		$filter['section'][] = [
+			'id' => $section->term_id,
+			'name' => $section->name,
+			'slug' => $section->slug,
+		];
+	}
+
+	$args = ['post_type' => 'camp', 'posts_per_page' => -1];
+	$loop = new WP_Query($args);
+	$newArray = [];
+	while ($loop->have_posts()) : $loop->the_post();
+		$newArray[] = get_field('period', get_the_ID());
+	endwhile;
+	wp_reset_postdata();
+	// Убрать дубликаты значений из массива $newArray
+	$period = array_unique($newArray);
+	// Сортирую массив в порядке возрастания с учетом цифр в названии
+	natsort($period);
+
+	usort($filter['age'], build_sorter('id'));
+	usort($filter['section'], build_sorter('id'));
+	$filter['period'] = $period;
+
 	$data['id_page'] = $id_page;
+	$data['background_img'] = $background_img;
+	$data['background_video'] = $background_video;
 	$data['content'] = $content;
 	$data['camps'] = $arrayCamps;
 	$data['review'] = $review;
 	$data['merch'] = $merch;
 	$data['docs'] = $arrayDocs;
+	$data['filter'] = $filter;
 
 	return $data;
 }
@@ -326,12 +397,19 @@ function art_page_blogs()
 {
 	$data = [];
 
+	$my_page = get_page_by_path('blogs', OBJECT, 'page');
+	$id_page = $my_page->ID;
+
+	$post = get_post($id_page);
+	$content = apply_filters('the_content', $post->post_content);
+
+	$background = get_field('background_blogs', $id_page);
+	$background_video = get_field('video_blogs', $id_page);
+
 	$args = [
 		'post_type' => 'post',
 		'numberposts' 	=> 6,
 	];
-
-	// $img_steps_form = get_field('bg-form-psychologist', $id_page);
 
 	$posts = get_posts($args);
 	$i = 0;
@@ -351,8 +429,14 @@ function art_page_blogs()
 		$i++;
 	}
 
+	$data2 = [
+		'content' => $content,
+		'background_img' => ['url' => $background['url'], 'alt' => $background['title']],
+		'background_video' => $background_video,
+		'posts' => $data
+	];
 
-	return $data;
+	return $data2;
 }
 
 function art_page_blogs_post($slug)
