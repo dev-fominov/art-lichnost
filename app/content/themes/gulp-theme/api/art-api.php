@@ -53,10 +53,344 @@ add_action('rest_api_init', function () {
 		'callback' => 'art_camp_filter',
 		'permission_callback' => '__return_true'
 	]);
+
+	register_rest_route('art/v1', 'page/skills', [
+		'methods' => 'GET',
+		'callback' => 'art_page_skills',
+		'permission_callback' => '__return_true'
+	]);
+
+	register_rest_route('art/v1', 'page/professions', [
+		'methods' => 'GET',
+		'callback' => 'art_page_professions',
+		'permission_callback' => '__return_true'
+	]);
+
+	register_rest_route('art/v1', 'page/tourist-holidays', [
+		'methods' => 'GET',
+		'callback' => 'art_page_tourist_holidays',
+		'permission_callback' => '__return_true'
+	]);
 });
 
 
+function art_page_skills()
+{
+	$data = [];
 
+	$my_page = get_term_by('slug', 'skills', 'camp-section');
+	$id_page = 'term_' . $my_page->term_id . '';
+
+	$background_img = ['url' => get_field('bac_img_section', $id_page)['url'], 'alt' => get_field('bac_img_section', $id_page)['title']];
+	$background_video = get_field('bac_video_section', $id_page);
+
+	$post = get_field('title-section', $id_page);
+	$content = apply_filters('the_content', $post);
+
+	$description_section = get_field('description_section', $id_page);
+	$content_description_section = apply_filters('the_content', $description_section);
+	$izobrazhenie = ['url' => get_field('izobrazhenie', $id_page)['url'], 'alt' => get_field('izobrazhenie', $id_page)['title']];
+	$id_video = get_field('id_video', $id_page);
+
+	$benefits_title = get_field('title_section_block', $id_page);
+	$array_benefits_parents = get_field('preimushhestva_dlya_roditelej', $id_page);
+	$array_benefits_children = get_field('preimushhestva_dlya_detok', $id_page);
+	foreach ($array_benefits_parents as $item) {
+		$benefits_parents[] = $item['nazvanie'];
+	}
+	foreach ($array_benefits_children as $item) {
+		$benefits_children[] = $item['nazvanie'];
+	}
+
+	$mesta_prozhivaniya_title = get_field('title_section_block_video', $id_page);
+	$mesta_prozhivaniya_description = get_field('description_section_block_video', $id_page);
+	$array_video_mesta_prozhivaniya = get_field('video_mesta_prozhivaniya', $id_page);
+	foreach ($array_video_mesta_prozhivaniya as $item) {
+		$mesta_prozhivaniya[] = [
+			'title' => $item['zagolovok'],
+			'description' => $item['opisanie'],
+			'id_video' => $item['id_video'],
+			'oblozhka' => ['url' => $item['oblozhka']['url'], 'alt' => $item['oblozhka']['title']]
+		];
+	}
+
+	$programm_title = get_field('zagolovok_bloka_programm', $id_page);
+	$array_programm = get_field('opisanie_bloka_programm', $id_page);
+	foreach ($array_programm as $item) {
+		$programm[] = $item['nazvanie'];
+	}
+	$programm_img = ['url' => get_field('izobrazhenie_programm', $id_page)['url'], 'alt' => get_field('izobrazhenie_programm', $id_page)['title']];
+
+	$daily_regime_title = get_field('zagolovok_bloka_rezim', $id_page);
+	$array_daily_regime = get_field('rasporyadok_dnya', $id_page);
+	foreach ($array_daily_regime as $item) {
+		$daily_regime[] = $item['vremya_i_meropriyatie'];
+	}
+
+	$includ_title = get_field('zagolovok_bloka_price', $id_page);
+	$includ_post = get_field('opisanie_bloka_price', $id_page);
+	$includ_content = apply_filters('the_content', $includ_post);
+
+	$array_faq = get_field('faq', $id_page);
+	foreach ($array_faq as $item) {
+		$faq[] = ['question' => $item['vopros'], 'answer' => $item['otvet']];
+	}
+
+	$request_title = get_field('zagolovok_zayavka', $id_page);
+	$array_request = get_field('spisok_punktov', $id_page);
+	foreach ($array_request as $item) {
+		$request[] = $item['nazvanie'];
+	}
+	$request_img = ['url' => get_field('izobrazhenie_razdel_lagerya', $id_page)['url'], 'alt' => get_field('izobrazhenie_razdel_lagerya', $id_page)['title']];
+
+	$data['id_page'] = $my_page->term_id;
+	$data['background_img'] = $background_img;
+	$data['background_video'] = $background_video;
+	$data['content'] = $content;
+
+	$data['description_text'] = $content_description_section;
+	$data['description_img'] = $izobrazhenie;
+	$data['description_video'] = $id_video;
+
+	$data['benefits_title'] = $benefits_title;
+	$data['benefits_parents'] = $benefits_parents;
+	$data['benefits_children'] = $benefits_children;
+
+	$data['prozhivanie_title'] = $mesta_prozhivaniya_title;
+	$data['prozhivanie_description'] = $mesta_prozhivaniya_description;
+	$data['mesta_prozhivaniya'] = $mesta_prozhivaniya;
+
+	$data['programm_title'] = $programm_title;
+	$data['programm'] = $programm;
+	$data['programm_img'] = $programm_img;
+
+	$data['daily_regime_title'] = $daily_regime_title;
+	$data['daily_regime'] = $daily_regime;
+
+	$data['includ_title'] = $includ_title;
+	$data['includ_content'] = $includ_content;
+
+	$data['faq'] = $faq;
+
+	$data['request_title'] = $request_title;
+	$data['request'] = $request;
+	$data['request_img'] = $request_img;
+
+	return $data;
+}
+
+function art_page_professions()
+{
+	$data = [];
+
+	$my_page = get_term_by('slug', 'professions', 'camp-section');
+	$id_page = 'term_' . $my_page->term_id . '';
+
+	$background_img = ['url' => get_field('bac_img_section', $id_page)['url'], 'alt' => get_field('bac_img_section', $id_page)['title']];
+	$background_video = get_field('bac_video_section', $id_page);
+
+	$post = get_field('title-section', $id_page);
+	$content = apply_filters('the_content', $post);
+
+	$description_section = get_field('description_section', $id_page);
+	$content_description_section = apply_filters('the_content', $description_section);
+	$izobrazhenie = ['url' => get_field('izobrazhenie', $id_page)['url'], 'alt' => get_field('izobrazhenie', $id_page)['title']];
+	$id_video = get_field('id_video', $id_page);
+
+	$benefits_title = get_field('title_section_block', $id_page);
+	$array_benefits_parents = get_field('preimushhestva_dlya_roditelej', $id_page);
+	$array_benefits_children = get_field('preimushhestva_dlya_detok', $id_page);
+	foreach ($array_benefits_parents as $item) {
+		$benefits_parents[] = $item['nazvanie'];
+	}
+	foreach ($array_benefits_children as $item) {
+		$benefits_children[] = $item['nazvanie'];
+	}
+
+	$mesta_prozhivaniya_title = get_field('title_section_block_video', $id_page);
+	$mesta_prozhivaniya_description = get_field('description_section_block_video', $id_page);
+	$array_video_mesta_prozhivaniya = get_field('video_mesta_prozhivaniya', $id_page);
+	foreach ($array_video_mesta_prozhivaniya as $item) {
+		$mesta_prozhivaniya[] = [
+			'title' => $item['zagolovok'],
+			'description' => $item['opisanie'],
+			'id_video' => $item['id_video'],
+			'oblozhka' => ['url' => $item['oblozhka']['url'], 'alt' => $item['oblozhka']['title']]
+		];
+	}
+
+	$programm_title = get_field('zagolovok_bloka_programm', $id_page);
+	$array_programm = get_field('opisanie_bloka_programm', $id_page);
+	foreach ($array_programm as $item) {
+		$programm[] = $item['nazvanie'];
+	}
+	$programm_img = ['url' => get_field('izobrazhenie_programm', $id_page)['url'], 'alt' => get_field('izobrazhenie_programm', $id_page)['title']];
+
+	$daily_regime_title = get_field('zagolovok_bloka_rezim', $id_page);
+	$array_daily_regime = get_field('rasporyadok_dnya', $id_page);
+	foreach ($array_daily_regime as $item) {
+		$daily_regime[] = $item['vremya_i_meropriyatie'];
+	}
+
+	$includ_title = get_field('zagolovok_bloka_price', $id_page);
+	$includ_post = get_field('opisanie_bloka_price', $id_page);
+	$includ_content = apply_filters('the_content', $includ_post);
+
+	$array_faq = get_field('faq', $id_page);
+	foreach ($array_faq as $item) {
+		$faq[] = ['question' => $item['vopros'], 'answer' => $item['otvet']];
+	}
+
+	$request_title = get_field('zagolovok_zayavka', $id_page);
+	$array_request = get_field('spisok_punktov', $id_page);
+	foreach ($array_request as $item) {
+		$request[] = $item['nazvanie'];
+	}
+	$request_img = ['url' => get_field('izobrazhenie_razdel_lagerya', $id_page)['url'], 'alt' => get_field('izobrazhenie_razdel_lagerya', $id_page)['title']];
+
+	$data['id_page'] = $my_page->term_id;
+	$data['background_img'] = $background_img;
+	$data['background_video'] = $background_video;
+	$data['content'] = $content;
+
+	$data['description_text'] = $content_description_section;
+	$data['description_img'] = $izobrazhenie;
+	$data['description_video'] = $id_video;
+
+	$data['benefits_title'] = $benefits_title;
+	$data['benefits_parents'] = $benefits_parents;
+	$data['benefits_children'] = $benefits_children;
+
+	$data['prozhivanie_title'] = $mesta_prozhivaniya_title;
+	$data['prozhivanie_description'] = $mesta_prozhivaniya_description;
+	$data['mesta_prozhivaniya'] = $mesta_prozhivaniya;
+
+	$data['programm_title'] = $programm_title;
+	$data['programm'] = $programm;
+	$data['programm_img'] = $programm_img;
+
+	$data['daily_regime_title'] = $daily_regime_title;
+	$data['daily_regime'] = $daily_regime;
+
+	$data['includ_title'] = $includ_title;
+	$data['includ_content'] = $includ_content;
+
+	$data['faq'] = $faq;
+
+	$data['request_title'] = $request_title;
+	$data['request'] = $request;
+	$data['request_img'] = $request_img;
+
+	return $data;
+}
+
+function art_page_tourist_holidays()
+{
+	$data = [];
+
+	$my_page = get_term_by('slug', 'tourist-holidays', 'camp-section');
+	$id_page = 'term_' . $my_page->term_id . '';
+
+	$background_img = ['url' => get_field('bac_img_section', $id_page)['url'], 'alt' => get_field('bac_img_section', $id_page)['title']];
+	$background_video = get_field('bac_video_section', $id_page);
+
+	$post = get_field('title-section', $id_page);
+	$content = apply_filters('the_content', $post);
+
+	$description_section = get_field('description_section', $id_page);
+	$content_description_section = apply_filters('the_content', $description_section);
+	$izobrazhenie = ['url' => get_field('izobrazhenie', $id_page)['url'], 'alt' => get_field('izobrazhenie', $id_page)['title']];
+	$id_video = get_field('id_video', $id_page);
+
+	$benefits_title = get_field('title_section_block', $id_page);
+	$array_benefits_parents = get_field('preimushhestva_dlya_roditelej', $id_page);
+	$array_benefits_children = get_field('preimushhestva_dlya_detok', $id_page);
+	foreach ($array_benefits_parents as $item) {
+		$benefits_parents[] = $item['nazvanie'];
+	}
+	foreach ($array_benefits_children as $item) {
+		$benefits_children[] = $item['nazvanie'];
+	}
+
+	$mesta_prozhivaniya_title = get_field('title_section_block_video', $id_page);
+	$mesta_prozhivaniya_description = get_field('description_section_block_video', $id_page);
+	$array_video_mesta_prozhivaniya = get_field('video_mesta_prozhivaniya', $id_page);
+	foreach ($array_video_mesta_prozhivaniya as $item) {
+		$mesta_prozhivaniya[] = [
+			'title' => $item['zagolovok'],
+			'description' => $item['opisanie'],
+			'id_video' => $item['id_video'],
+			'oblozhka' => ['url' => $item['oblozhka']['url'], 'alt' => $item['oblozhka']['title']]
+		];
+	}
+
+	$programm_title = get_field('zagolovok_bloka_programm', $id_page);
+	$array_programm = get_field('opisanie_bloka_programm', $id_page);
+	foreach ($array_programm as $item) {
+		$programm[] = $item['nazvanie'];
+	}
+	$programm_img = ['url' => get_field('izobrazhenie_programm', $id_page)['url'], 'alt' => get_field('izobrazhenie_programm', $id_page)['title']];
+
+	$daily_regime_title = get_field('zagolovok_bloka_rezim', $id_page) ? get_field('zagolovok_bloka_rezim', $id_page) : null;
+	$array_daily_regime = get_field('rasporyadok_dnya', $id_page) ? get_field('rasporyadok_dnya', $id_page) : null;
+	if ($array_daily_regime) {
+		foreach ($array_daily_regime as $item) {
+			$daily_regime[] = $item['vremya_i_meropriyatie'];
+		}
+	}
+
+
+	$includ_title = get_field('zagolovok_bloka_price', $id_page);
+	$includ_post = get_field('opisanie_bloka_price', $id_page);
+	$includ_content = apply_filters('the_content', $includ_post);
+
+	$array_faq = get_field('faq', $id_page);
+	foreach ($array_faq as $item) {
+		$faq[] = ['question' => $item['vopros'], 'answer' => $item['otvet']];
+	}
+
+	$request_title = get_field('zagolovok_zayavka', $id_page);
+	$array_request = get_field('spisok_punktov', $id_page);
+	foreach ($array_request as $item) {
+		$request[] = $item['nazvanie'];
+	}
+	$request_img = ['url' => get_field('izobrazhenie_razdel_lagerya', $id_page)['url'], 'alt' => get_field('izobrazhenie_razdel_lagerya', $id_page)['title']];
+
+	$data['id_page'] = $my_page->term_id;
+	$data['background_img'] = $background_img;
+	$data['background_video'] = $background_video;
+	$data['content'] = $content;
+
+	$data['description_text'] = $content_description_section;
+	$data['description_img'] = $izobrazhenie;
+	$data['description_video'] = $id_video;
+
+	$data['benefits_title'] = $benefits_title;
+	$data['benefits_parents'] = $benefits_parents;
+	$data['benefits_children'] = $benefits_children;
+
+	$data['prozhivanie_title'] = $mesta_prozhivaniya_title;
+	$data['prozhivanie_description'] = $mesta_prozhivaniya_description;
+	$data['mesta_prozhivaniya'] = $mesta_prozhivaniya;
+
+	$data['programm_title'] = $programm_title;
+	$data['programm'] = $programm;
+	$data['programm_img'] = $programm_img;
+
+	$data['daily_regime_title'] = $daily_regime_title;
+	$data['daily_regime'] = $daily_regime;
+
+	$data['includ_title'] = $includ_title;
+	$data['includ_content'] = $includ_content;
+
+	$data['faq'] = $faq;
+
+	$data['request_title'] = $request_title;
+	$data['request'] = $request;
+	$data['request_img'] = $request_img;
+
+	return $data;
+}
 
 function art_camp_filter($params)
 {
