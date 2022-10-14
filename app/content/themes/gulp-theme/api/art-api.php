@@ -532,10 +532,9 @@ function art_camp_filter($params)
 		$thumbnail = get_field('image_miniatyura', $id);
 
 		$data[$i]['id'] = $id;
-		$data[$i]['$certificate'] = $certificate;
-		$data[$i]['title'] = $camp->post_title;
-		$data[$i]['subtitle'] = get_field('location', $id);
-		$data[$i]['slug'] = $camp->post_name;
+		$data[$i]['post_title'] = $camp->post_title;
+		$data[$i]['post_slug'] = $camp->post_name;
+		$data[$i]['location'] = get_field('location', $id);
 		$data[$i]['thumbnail'] = ['url' => $thumbnail['url'], 'alt' => $thumbnail['title']];
 
 		$i++;
@@ -673,13 +672,23 @@ function art_page_camp()
 	$loop = new WP_Query($args);
 	$newArray = [];
 	while ($loop->have_posts()) : $loop->the_post();
-		$newArray[] = get_field('period', get_the_ID());
+		$newArray[] = [
+			'id' => get_the_ID(),
+			'name' => get_field('period', get_the_ID()),
+			'slug' => get_field('period', get_the_ID())
+		];
 	endwhile;
 	wp_reset_postdata();
+
+	$period = [];
+	$test = [];
 	// Убрать дубликаты значений из массива $newArray
-	$period = array_unique($newArray);
-	// Сортирую массив в порядке возрастания с учетом цифр в названии
-	natsort($period);
+	foreach ($newArray as $value) {
+		if(!in_array($value['name'], $test)) {
+			$test[] = $value['name'];
+			$period[] = $value;
+		}
+	}
 
 	usort($filter['age'], build_sorter('id'));
 	usort($filter['section'], build_sorter('id'));

@@ -31,6 +31,7 @@ add_action('wp_print_styles', 'remove_styles', 100);
 
 function add_custom_taxonomies()
 {
+	// Camp
 	register_taxonomy('camp-ages', ['camp'], [
 		'hierarchical' => true,
 		'label'        => 'Возрастная категория',
@@ -50,8 +51,53 @@ function add_custom_taxonomies()
 		'public' => true,
 		'show_in_nav_menus' => true
 	]);
+
+	// Courses
+	register_taxonomy('courses-category', ['courses'], [
+		'hierarchical' => true,
+		'label'        => 'Категории курсов',
+		'rewrite'      => ['slug' => 'courses-category'],
+		'public' => true,
+		'show_in_nav_menus' => true
+	]);
+	register_taxonomy('courses-ages', ['courses'], [
+		'hierarchical' => true,
+		'label'        => 'Возрастная категория',
+		'show_in_nav_menus' => true,
+		'rewrite'      => ['slug' => 'courses-ages']
+	]);
+
 }
 add_action('init', 'add_custom_taxonomies');
+
+// Сourses
+function my_custom_post_courses()
+{
+	$labels = [
+		'name'               => 'Курс',
+		'singular_name'      => 'Курс',
+		'add_new'            => 'Добавить курс',
+		'add_new_item'       => 'Добавить',
+		'edit_item'          => 'Редактировать',
+		'new_item'           => 'Новый курс',
+		'all_items'          => 'Все курсы',
+		'view_item'          => 'Посмотреть',
+		'search_items'       => 'Искать',
+		'not_found'          => 'Курс не найден',
+		'not_found_in_trash' => 'Курс не найден',
+		'parent_item_colon'  => '',
+		'menu_name'          => 'Курсы навыков'
+	];
+	$args = [
+		'labels'        => $labels,
+		'public'        => true,
+		'rewrite'       => ['slug' => 'courses'],
+		'supports'      => ['title'],
+		'has_archive'   => true
+	];
+	register_post_type('courses', $args);
+}
+add_action('init', 'my_custom_post_courses');
 
 // Camp
 function my_custom_post_camp()
@@ -110,6 +156,64 @@ function my_custom_post_docs()
 	register_post_type('docs', $args);
 }
 add_action('init', 'my_custom_post_docs');
+
+// Vacancies
+function my_custom_post_vacancies()
+{
+	$labels = [
+		'name'               => 'Вакансии',
+		'singular_name'      => 'Вакансия',
+		'add_new'            => 'Добавить вакансию',
+		'add_new_item'       => 'Добавить',
+		'edit_item'          => 'Редактировать',
+		'new_item'           => 'Новая вакансия',
+		'all_items'          => 'Все вакансии',
+		'view_item'          => 'Посмотреть',
+		'search_items'       => 'Искать',
+		'not_found'          => 'Вакансия не найдена',
+		'not_found_in_trash' => 'Вакансия не найдена',
+		'parent_item_colon'  => '',
+		'menu_name'          => 'Вакансии'
+	];
+	$args = [
+		'labels'        => $labels,
+		'public'        => true,
+		'rewrite'       => ['slug' => 'vacancies'],
+		'supports'      => ['title'],
+		'has_archive'   => true
+	];
+	register_post_type('vacancies', $args);
+}
+add_action('init', 'my_custom_post_vacancies');
+
+// Projects
+function my_custom_post_projects()
+{
+	$labels = [
+		'name'               => 'Наши проекты',
+		'singular_name'      => 'Наш проект',
+		'add_new'            => 'Добавить проект',
+		'add_new_item'       => 'Добавить',
+		'edit_item'          => 'Редактировать',
+		'new_item'           => 'Новый проект',
+		'all_items'          => 'Все проекты',
+		'view_item'          => 'Посмотреть',
+		'search_items'       => 'Искать',
+		'not_found'          => 'Проект не найден',
+		'not_found_in_trash' => 'Проект не найден',
+		'parent_item_colon'  => '',
+		'menu_name'          => 'Проекты'
+	];
+	$args = [
+		'labels'        => $labels,
+		'public'        => true,
+		'rewrite'       => ['slug' => 'projects'],
+		'supports'      => ['title'],
+		'has_archive'   => true
+	];
+	register_post_type('projects', $args);
+}
+add_action('init', 'my_custom_post_projects');
 
 
 add_action('after_setup_theme', function () {
