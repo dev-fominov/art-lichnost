@@ -66,8 +66,169 @@ add_action('rest_api_init', function () {
 		'callback' => 'art_page_merch',
 		'permission_callback' => '__return_true'
 	]);
+
+	// Курсы
+	register_rest_route($prefix, 'page/courses', [
+		'methods' => 'GET',
+		'callback' => 'art_page_courses',
+		'permission_callback' => '__return_true'
+	]);
+	register_rest_route($prefix, 'courses/filter', [
+		'methods' => 'GET',
+		'callback' => 'art_courses_filter',
+		'permission_callback' => '__return_true'
+	]);
 });
 
+function build_sorter($key)
+{
+	return function ($a, $b) use ($key) {
+		return strnatcmp($a[$key], $b[$key]);
+	};
+}
+
+function art_page_courses()
+{
+	$data = [];
+
+	$my_page = get_page_by_path('courses', OBJECT, 'page');
+	$id_page = $my_page->ID;
+
+	$background_img = ['url' => get_field('image_page_courses', $id_page)['url'], 'alt' => get_field('image_page_courses', $id_page)['title']];
+	$background_video = get_field('video_page_courses', $id_page);
+
+	$post = get_post($id_page);
+	$content = apply_filters('the_content', $post->post_content);
+	$description = get_field('description_courses', $id_page);
+
+	$arrayCourses = null;
+
+	$terms = get_terms([
+		'taxonomy' => 'courses-category',
+		'hide_empty' => false,
+	]);
+
+	foreach ($terms as $term) {
+
+		$args = [
+			'post_type' => 'courses',
+			'numberposts' 	=> -1,
+			'tax_query' => [[
+				'taxonomy' => 'courses-category',
+				'field'    => 'slug',
+				'terms'    => $term->slug
+			]],
+		];
+
+		$courses = query_posts($args);
+		$newCourses = [];
+
+		foreach ($courses as $course) {
+
+			$id = $course->ID;
+
+			$image_miniatyura = get_field('img_problem', $id);
+
+			$newCourses[] = [
+				'ID' => $id,
+				'post_title' => $course->post_title,
+				'post_slug' => $course->post_name,
+				'thumbnail' => ['url' => $image_miniatyura['url'], 'alt' => $image_miniatyura['title']],
+				// 'ages' => $course
+			];
+		}
+
+		$arrayCourses[] = [
+			'term_id' => $term->term_id,
+			'name' => $term->name,
+			'slug' => $term->slug,
+			'description' => $term->description,
+			'count' => $term->count,
+			'camp_card' => $newCourses
+		];
+	}
+
+	$review = '';
+	$about_courses = '';
+
+	$filter = null;
+
+	$courses_ages = get_terms([
+		'taxonomy' => 'courses-ages',
+		'hide_empty' => false,
+		'parent' => 0
+	]);
+
+	foreach ($courses_ages as $age) {
+		$filter['age'][] = [
+			'id' => $age->term_id,
+			'name' => $age->name,
+			'slug' => $age->slug,
+		];
+	}
+
+	$courses_category = get_terms([
+		'taxonomy' => 'courses-category',
+		'hide_empty' => false,
+		'parent' => 0
+	]);
+
+	foreach ($courses_category as $category) {
+		$filter['category'][] = [
+			'id' => $category->term_id,
+			'name' => $category->name,
+			'slug' => $category->slug,
+		];
+	}
+
+	$args = ['post_type' => 'courses', 'posts_per_page' => -1];
+	$loop = new WP_Query($args);
+	$newArray = [];
+	while ($loop->have_posts()) : $loop->the_post();
+		$newArray[] = [
+			'id' => get_the_ID(),
+			'name' => get_field('fio', get_the_ID()),
+			'slug' => get_field('fio', get_the_ID())
+		];
+	endwhile;
+	wp_reset_postdata();
+
+	$presenter = [];
+	$test = [];
+	// Убрать дубликаты значений из массива $newArray
+	foreach ($newArray as $value) {
+		if (!in_array($value['name'], $test)) {
+			$test[] = $value['name'];
+			$presenter[] = $value;
+		}
+	}
+
+	usort($filter['age'], build_sorter('id'));
+	$filter['presenter'] = $presenter;
+
+	$steps_form_title = get_field('zagolovok_zayavka', $id_page);
+	$steps_form = get_field('spisok_punktov', $id_page);
+	foreach ($steps_form as $item) {
+		$steps_form_items[] = $item['nazvanie'];
+	}
+	$img_steps_form = get_field('izobrazhenie_razdel_lagerya', $id_page);
+	$step_form['steps_form_title'] = $steps_form_title;
+	$step_form['steps_form_items'] = $steps_form_items;
+	$step_form['img_steps_form'] = ['url' => $img_steps_form['url'], 'alt' => $img_steps_form['title']];
+
+	$data['id_page'] = $id_page;
+	$data['background_img'] = $background_img;
+	$data['background_video'] = $background_video;
+	$data['content'] = $content;
+	$data['description'] = $description;
+	$data['courses'] = $arrayCourses;
+	$data['review'] = $review;
+	$data['about_courses'] = $about_courses;
+	$data['filter'] = $filter;
+	$data['step_form'] = $step_form;
+
+	return $data;
+}
 
 function art_page_merch()
 {
@@ -633,13 +794,6 @@ function art_page_camp()
 
 	$filter = null;
 
-	function build_sorter($key)
-	{
-		return function ($a, $b) use ($key) {
-			return strnatcmp($a[$key], $b[$key]);
-		};
-	}
-
 	$camp_ages = get_terms([
 		'taxonomy' => 'camp-ages',
 		'hide_empty' => false,
@@ -684,7 +838,7 @@ function art_page_camp()
 	$test = [];
 	// Убрать дубликаты значений из массива $newArray
 	foreach ($newArray as $value) {
-		if(!in_array($value['name'], $test)) {
+		if (!in_array($value['name'], $test)) {
 			$test[] = $value['name'];
 			$period[] = $value;
 		}
