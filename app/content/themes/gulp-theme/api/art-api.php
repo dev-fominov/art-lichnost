@@ -4,16 +4,21 @@ add_action('rest_api_init', function () {
 
 	$prefix = 'art/v1';
 
-	register_rest_route($prefix, 'page/contacts', [
-		'methods' => 'GET',
-		'callback' => 'art_page_contacts',
-		'permission_callback' => '__return_true'
-	]);
+	// Главная
 	register_rest_route($prefix, 'page/home', [
 		'methods' => 'GET',
 		'callback' => 'art_page_home',
 		'permission_callback' => '__return_true'
 	]);
+
+	// Контакты
+	register_rest_route($prefix, 'page/contacts', [
+		'methods' => 'GET',
+		'callback' => 'art_page_contacts',
+		'permission_callback' => '__return_true'
+	]);
+
+	// Блоги + отдельная статья
 	register_rest_route($prefix, 'page/blogs', [
 		'methods' => 'GET',
 		'callback' => 'art_page_blogs',
@@ -24,43 +29,47 @@ add_action('rest_api_init', function () {
 		'callback' => 'art_page_blogs_post',
 		'permission_callback' => '__return_true'
 	]);
+
+	// Психолог
 	register_rest_route($prefix, 'page/psychologist', [
 		'methods' => 'GET',
 		'callback' => 'art_page_psychologist',
 		'permission_callback' => '__return_true'
 	]);
 
-	// Лагеря
+	// Лагерь
 	register_rest_route($prefix, 'page/camp', [
 		'methods' => 'GET',
 		'callback' => 'art_page_camp',
 		'permission_callback' => '__return_true'
 	]);
-
 	register_rest_route($prefix, 'camp/filter', [
 		'methods' => 'GET',
 		'callback' => 'art_camp_filter',
 		'permission_callback' => '__return_true'
 	]);
 
+	// Лагерь навыков
 	register_rest_route($prefix, 'page/skills', [
 		'methods' => 'GET',
 		'callback' => 'art_page_skills',
 		'permission_callback' => '__return_true'
 	]);
 
+	// Лагерь профессий
 	register_rest_route($prefix, 'page/professions', [
 		'methods' => 'GET',
 		'callback' => 'art_page_professions',
 		'permission_callback' => '__return_true'
 	]);
-
+	// Туристические каникулы
 	register_rest_route($prefix, 'page/tourist-holidays', [
 		'methods' => 'GET',
 		'callback' => 'art_page_tourist_holidays',
 		'permission_callback' => '__return_true'
 	]);
 
+	// Мерч
 	register_rest_route($prefix, 'page/merch', [
 		'methods' => 'GET',
 		'callback' => 'art_page_merch',
@@ -78,13 +87,204 @@ add_action('rest_api_init', function () {
 		'callback' => 'art_courses_filter',
 		'permission_callback' => '__return_true'
 	]);
+
+	// Профтестирование
+	register_rest_route($prefix, 'page/proftestirovanie', [
+		'methods' => 'GET',
+		'callback' => 'art_page_proftestirovanie',
+		'permission_callback' => '__return_true'
+	]);
+
 });
 
+// Для сортировки многомерных массивов по ключу
 function build_sorter($key)
 {
 	return function ($a, $b) use ($key) {
 		return strnatcmp($a[$key], $b[$key]);
 	};
+}
+
+function art_page_proftestirovanie() {
+
+	$data = [];
+
+	$my_page = get_page_by_path('proftestirovanie', OBJECT, 'page');
+	$id_page = $my_page->ID;
+	$post = get_post($id_page);
+	$content = apply_filters('the_content', $post->post_content);
+
+	$banner = get_field('izobrazhenie', $id_page);
+
+	$tests = get_field('vid_test', $id_page);
+
+	$all_tests = null;
+	foreach( $tests as $test ) {
+		$img = $test['izobrazhenie'];
+
+		$all_tests[] = [
+			'title' => $test['nazvanie'],
+			'link_to_page' => $test['link_to_page'],
+			'for_whom' => $test['dlya_kogo'],
+			'upcoming_dates' => $test['blizhajshie_daty'],
+			'address' => $test['adres'],
+			'price' => $test['czena'],
+			'img_test' => ['url' => $img['url'], 'alt' => $img['title']]
+		];
+	}
+
+	$why_title = get_field('zagolovok_test', $id_page);
+	$questions = get_field('spisok_voprosov', $id_page);
+
+	foreach($questions as $item) {
+		$list_questions[] = [
+			'question' => $item['zagolovok'],
+			'answer' => $item['opisanie']
+		];
+	}
+
+	$steps_form = get_field('spisok_punktov', $id_page);
+	foreach ($steps_form as $item) {
+		$steps_form_items[] = $item['nazvanie'];
+	}
+	$img_steps_form = get_field('izobrazhenie_zayavka', $id_page);
+	$step_form['steps_form_title'] = get_field('zagolovok_zayavka', $id_page);
+	$step_form['steps_form_items'] = $steps_form_items;
+	$step_form['img_steps_form'] = ['url' => $img_steps_form['url'], 'alt' => $img_steps_form['title']];
+
+	$id_page_online = get_page_by_path('proftestirovanie/online-test', OBJECT, 'page')->ID;
+	$id_page_ofline = get_page_by_path('proftestirovanie/offline-test', OBJECT, 'page')->ID;
+	
+	$online = get_field('konsultanty_test', $id_page_online);
+	$offline = get_field('konsultanty_test', $id_page_ofline);
+	$consultants_online = null;
+	$consultants_offline = null;
+	foreach($online as $item) {
+
+		$img = $item['foto'];
+		$consultants_online[] = [
+			'title' => $item['fio'],
+			'job_title' => $item['dolzhnost'],
+			'description' => $item['opisanie'],
+			'img' => ['url' => $img['url'], 'alt' => $img['title']]
+		];
+	}
+
+	foreach($offline as $item) {
+
+		$img = $item['foto'];
+		$consultants_offline[] = [
+			'title' => $item['fio'],
+			'job_title' => $item['dolzhnost'],
+			'description' => $item['opisanie'],
+			'img' => ['url' => $img['url'], 'alt' => $img['title']]
+		];
+	}
+
+	$array_merge_consultants = array_merge( $consultants_online, $consultants_offline );
+
+	$consultants = [];
+	$test = [];
+
+	foreach ($array_merge_consultants as $value) {
+		if (!in_array($value['title'], $test)) {
+			$test[] = $value['title'];
+			$consultants[] = $value;
+		}
+	}
+
+	$data['id_page'] = $id_page;
+	$data['content'] = $content;
+	$data['banner'] = ['url' => $banner['url'], 'alt' => $banner['title']];
+	$data['tests'] = $all_tests;
+	$data['why_title'] = $why_title;
+	$data['list_questions'] = $list_questions;
+
+	$data['consultants'] = $consultants;
+
+	$data['step_form'] = $step_form;
+
+	return $data;
+}
+
+function art_courses_filter($params)
+{
+
+	$age = !empty($params->get_param('age')) ? $params->get_param('age') : null;
+	$course = !empty($params->get_param('course')) ? $params->get_param('course') : null;
+	$presenter = !empty($params->get_param('presenter')) ? $params->get_param('presenter') : null;
+
+	$args = [
+		'post_type' 			=> 'courses',
+		'posts_per_page' 	=> '-1',
+		'post_status' 		=> 'publish'
+	];
+
+	// // Filter params AGE
+	if (isset($age) && $age != 'all') {
+		$args['tax_query'][] = array(
+			'taxonomy' => 'courses-ages',
+			'field'    => 'slug',
+			'terms'    => $age
+		);
+	} else {
+		$args['tax_query'][] = array(
+			'taxonomy' => 'courses-ages',
+			'operator' => 'EXISTS'
+		);
+	}
+
+	// Filter params PRESENTER
+	if (isset($presenter) && $presenter != 'all') {
+		$args['meta_query'][] = array(
+			'key' => 'fio',
+			'value' => $presenter,
+			'type' => 'CHAR',
+			'compare' => 'REGEXP'
+		);
+	}
+
+	// Filter params COURSES
+	if (isset($course) && $course != 'all') {
+		$args['tax_query'][] = array(
+			'taxonomy' => 'courses-category',
+			'field'    => 'slug',
+			'terms'    => $course
+		);
+	} else {
+		$args['tax_query'][] = array(
+			'taxonomy' => 'courses-category',
+			'operator' => 'EXISTS'
+		);
+	}
+
+	$courses = new WP_Query($args);
+
+	$data = [];
+	$i = 0;
+
+	foreach ($courses->posts as $course) {
+		$id = $course->ID;
+		$thumbnail = get_field('img_problem', $id);
+
+		$course_ages = get_the_terms($id, 'courses-ages');
+		$pattern = '/[^0-9]/';
+		$name_ages = null;
+		foreach ($course_ages as $item) {
+			$name_ages[] = (int)preg_replace($pattern, "", $item->name);
+		}
+		$period_ages = min($name_ages) . '-' . max($name_ages) . ' лет';
+
+		$data[$i]['id'] = $id;
+		$data[$i]['post_title'] = $course->post_title;
+		$data[$i]['post_slug'] = $course->post_name;
+		$data[$i]['ages'] = $period_ages;
+		$data[$i]['thumbnail'] = ['url' => $thumbnail['url'], 'alt' => $thumbnail['title']];
+
+		$i++;
+	}
+
+	return $data;
 }
 
 function art_page_courses()
@@ -128,13 +328,20 @@ function art_page_courses()
 			$id = $course->ID;
 
 			$image_miniatyura = get_field('img_problem', $id);
+			$course_ages = get_the_terms($id, 'courses-ages');
+			$pattern = '/[^0-9]/';
+			$name_ages = null;
+			foreach ($course_ages as $item) {
+				$name_ages[] = (int)preg_replace($pattern, "", $item->name);
+			}
+			$period_ages = min($name_ages) . '-' . max($name_ages) . ' лет';
 
 			$newCourses[] = [
 				'ID' => $id,
 				'post_title' => $course->post_title,
 				'post_slug' => $course->post_name,
 				'thumbnail' => ['url' => $image_miniatyura['url'], 'alt' => $image_miniatyura['title']],
-				// 'ages' => $course
+				'ages' => $period_ages
 			];
 		}
 
@@ -149,7 +356,25 @@ function art_page_courses()
 	}
 
 	$review = '';
-	$about_courses = '';
+
+	$video_about_courses = get_field('video_about_courses', $id_page);
+	$video_courses = null;
+	foreach ($video_about_courses as $item) {
+		$video_courses[] = [
+			'title' => $item['zagolovok'],
+			'description' => $item['opisanie'],
+			'id_video' => $item['id_video'],
+			'img' => [
+				'url' => $item['oblozhka']['url'],
+				'alt' => $item['oblozhka']['title']
+			]
+		];
+	}
+
+	$about_courses = [
+		'description' => get_field('description_about_courses', $id_page),
+		'video_courses' => $video_courses
+	];
 
 	$filter = null;
 
@@ -195,7 +420,7 @@ function art_page_courses()
 
 	$presenter = [];
 	$test = [];
-	// Убрать дубликаты значений из массива $newArray
+
 	foreach ($newArray as $value) {
 		if (!in_array($value['name'], $test)) {
 			$test[] = $value['name'];
@@ -206,13 +431,12 @@ function art_page_courses()
 	usort($filter['age'], build_sorter('id'));
 	$filter['presenter'] = $presenter;
 
-	$steps_form_title = get_field('zagolovok_zayavka', $id_page);
 	$steps_form = get_field('spisok_punktov', $id_page);
 	foreach ($steps_form as $item) {
 		$steps_form_items[] = $item['nazvanie'];
 	}
 	$img_steps_form = get_field('izobrazhenie_razdel_lagerya', $id_page);
-	$step_form['steps_form_title'] = $steps_form_title;
+	$step_form['steps_form_title'] = get_field('zagolovok_zayavka', $id_page);
 	$step_form['steps_form_items'] = $steps_form_items;
 	$step_form['img_steps_form'] = ['url' => $img_steps_form['url'], 'alt' => $img_steps_form['title']];
 
@@ -1025,6 +1249,11 @@ function art_page_psychologist()
 
 	$post = get_post($id_page);
 	$content = apply_filters('the_content', $post->post_content);
+
+	// сделать поле в админке izobrazhenie
+	// $banner = get_field('izobrazhenie', $id_page); 
+	$banner = ''; 
+
 	$title_first = get_field('title_psychologist', $id_page);
 
 	$get_resolved = get_field('issues_resolved', $id_page);
@@ -1086,6 +1315,9 @@ function art_page_psychologist()
 
 	$data['id_page'] = $id_page;
 	$data['content'] = $content;
+
+	// $data['banner'] = ['url' => $banner['url'], 'alt' => $banner['title']];
+	$data['banner'] = '';
 	$data['title_first'] = $title_first;
 	$data['issues_addressed'] = $issues_addressed;
 
