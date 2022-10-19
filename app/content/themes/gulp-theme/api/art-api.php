@@ -94,7 +94,18 @@ add_action('rest_api_init', function () {
 		'callback' => 'art_page_proftestirovanie',
 		'permission_callback' => '__return_true'
 	]);
-
+	// Онлайн тестирование
+	register_rest_route($prefix, 'page/online-test', [
+		'methods' => 'GET',
+		'callback' => 'art_page_online_test',
+		'permission_callback' => '__return_true'
+	]);
+	// Офлайн тестирование
+	register_rest_route($prefix, 'page/offline-test', [
+		'methods' => 'GET',
+		'callback' => 'art_page_offline_test',
+		'permission_callback' => '__return_true'
+	]);
 });
 
 // Для сортировки многомерных массивов по ключу
@@ -105,7 +116,245 @@ function build_sorter($key)
 	};
 }
 
-function art_page_proftestirovanie() {
+function art_page_offline_test()
+{
+
+	$data = [];
+
+	$my_page = get_page_by_path('proftestirovanie/offline-test', OBJECT, 'page');
+	$id_page = $my_page->ID;
+	$post = get_post($id_page);
+	$content = apply_filters('the_content', $post->post_content);
+
+	$banner = get_field('img_test', $id_page);
+	$benefits_array = get_field('preimushhestva_test', $id_page);
+	$benefits = null;
+
+	foreach ($benefits_array as $item) {
+		$benefits[] = $item['nazvanie'];
+	}
+
+	$list_array = get_field('spisok_punktov', $id_page);
+	$list = null;
+
+	foreach ($list_array as $item) {
+		$list[] = $item['nazvanie'];
+	}
+
+	$need_test[] = [
+		'title' => get_field('title_block_test', $id_page),
+		'list' => $list
+	];
+
+	$type_of_test = null;
+	$type_array = get_field('tests_block', $id_page);
+
+	foreach ($type_array as $item) {
+		$list_descr_array = $item['spisok_opisanie'];
+		$list_descr = null;
+		foreach ($list_descr_array as $item2) {
+			$list_descr[] = $item2['nazvanie'];
+		}
+
+		$type_of_test[] = [
+			'title' => $item['zagolovok'],
+			'for_whom' => $item['dlya_kakih_klassov'],
+			'list_descr' => $list_descr,
+			'time' => $item['vremya'],
+			'price' => $item['czena'],
+		];
+	}
+
+	$stages_test = null;
+
+	$stages_test_array = get_field('list_etapy', $id_page);
+
+	foreach ($stages_test_array as $item) {
+		$img = $item['izobrazhenie'];
+
+		$stages_test[] = [
+			'title' => $item['zagolovok'],
+			'description' => $item['opisanie'],
+			'img' => ['url' => $img['url'], 'alt' => $img['title']],
+		];
+	}
+
+	$need_list_array = get_field('neobhodimyj_spisok', $id_page) ? get_field('neobhodimyj_spisok', $id_page) : null;
+
+	$need_list = null;
+
+	if ($need_list_array) {
+		foreach ($need_list_array as $item) {
+			$need_list[] = $item['nazvanie'];
+		}
+	}
+
+
+
+	$what_need = [
+		'title' => get_field('title_what', $id_page),
+		'description' => get_field('opisanie_what', $id_page),
+		'description_2' => get_field('opisanie_what_2', $id_page),
+		'need_list' => $need_list,
+	];
+
+	$consultants_array = get_field('konsultanty_test', $id_page);
+	$consultants = null;
+
+	foreach ($consultants_array as $item) {
+		$img = $item['foto'];
+
+		$consultants[] = [
+			'name' => $item['fio'],
+			'job_title' => $item['dolzhnost'],
+			'description' => $item['opisanie'],
+			'img' => ['url' => $img['url'], 'alt' => $img['title']],
+		];
+	}
+
+	$faq_array = get_field('spisok_voprosov', $id_page);
+	$faq = null;
+
+	foreach ($faq_array as $item) {
+		$faq[] = [
+			'answer' => $item['vopros'],
+			'question' => $item['otvet'],
+		];
+	}
+
+
+	$data['id_page'] = $id_page;
+	$data['content'] = $content;
+	$data['banner'] = ['url' => $banner['url'], 'alt' => $banner['title']];
+	$data['benefits'] = $benefits;
+	$data['need_test'] = $need_test;
+	$data['type_of_test'] = $type_of_test;
+	$data['stages_test'] = $stages_test;
+	$data['what_need'] = $what_need;
+	$data['consultants'] = $consultants;
+	$data['faq'] = $faq;
+
+	return $data;
+}
+
+function art_page_online_test()
+{
+
+	$data = [];
+
+	$my_page = get_page_by_path('proftestirovanie/online-test', OBJECT, 'page');
+	$id_page = $my_page->ID;
+	$post = get_post($id_page);
+	$content = apply_filters('the_content', $post->post_content);
+
+	$banner = get_field('img_test', $id_page);
+	$benefits_array = get_field('preimushhestva_test', $id_page);
+	$benefits = null;
+
+	foreach ($benefits_array as $item) {
+		$benefits[] = $item['nazvanie'];
+	}
+
+	$list_array = get_field('spisok_punktov', $id_page);
+	$list = null;
+
+	foreach ($list_array as $item) {
+		$list[] = $item['nazvanie'];
+	}
+
+	$need_test[] = [
+		'title' => get_field('title_block_test', $id_page),
+		'list' => $list
+	];
+
+	$type_of_test = null;
+	$type_array = get_field('tests_block', $id_page);
+
+	foreach ($type_array as $item) {
+		$list_descr_array = $item['spisok_opisanie'];
+		$list_descr = null;
+		foreach ($list_descr_array as $item2) {
+			$list_descr[] = $item2['nazvanie'];
+		}
+
+		$type_of_test[] = [
+			'title' => $item['zagolovok'],
+			'for_whom' => $item['dlya_kakih_klassov'],
+			'list_descr' => $list_descr,
+			'time' => $item['vremya'],
+			'price' => $item['czena'],
+		];
+	}
+
+	$stages_test = null;
+
+	$stages_test_array = get_field('list_etapy', $id_page);
+
+	foreach ($stages_test_array as $item) {
+		$img = $item['izobrazhenie'];
+
+		$stages_test[] = [
+			'title' => $item['zagolovok'],
+			'description' => $item['opisanie'],
+			'img' => ['url' => $img['url'], 'alt' => $img['title']],
+		];
+	}
+
+	$need_list_array = get_field('neobhodimyj_spisok', $id_page);
+	$need_list = null;
+
+	foreach ($need_list_array as $item) {
+		$need_list[] = $item['nazvanie'];
+	}
+
+	$what_need = [
+		'title' => get_field('title_what', $id_page),
+		'description' => get_field('opisanie_what', $id_page),
+		'description_2' => get_field('opisanie_what_2', $id_page),
+		'need_list' => $need_list,
+	];
+
+	$consultants_array = get_field('konsultanty_test', $id_page);
+	$consultants = null;
+
+	foreach ($consultants_array as $item) {
+		$img = $item['foto'];
+
+		$consultants[] = [
+			'name' => $item['fio'],
+			'job_title' => $item['dolzhnost'],
+			'description' => $item['opisanie'],
+			'img' => ['url' => $img['url'], 'alt' => $img['title']],
+		];
+	}
+
+	$faq_array = get_field('spisok_voprosov', $id_page);
+	$faq = null;
+
+	foreach ($faq_array as $item) {
+		$faq[] = [
+			'answer' => $item['vopros'],
+			'question' => $item['otvet'],
+		];
+	}
+
+
+	$data['id_page'] = $id_page;
+	$data['content'] = $content;
+	$data['banner'] = ['url' => $banner['url'], 'alt' => $banner['title']];
+	$data['benefits'] = $benefits;
+	$data['need_test'] = $need_test;
+	$data['type_of_test'] = $type_of_test;
+	$data['stages_test'] = $stages_test;
+	$data['what_need'] = $what_need;
+	$data['consultants'] = $consultants;
+	$data['faq'] = $faq;
+
+	return $data;
+}
+
+function art_page_proftestirovanie()
+{
 
 	$data = [];
 
@@ -119,7 +368,7 @@ function art_page_proftestirovanie() {
 	$tests = get_field('vid_test', $id_page);
 
 	$all_tests = null;
-	foreach( $tests as $test ) {
+	foreach ($tests as $test) {
 		$img = $test['izobrazhenie'];
 
 		$all_tests[] = [
@@ -136,7 +385,7 @@ function art_page_proftestirovanie() {
 	$why_title = get_field('zagolovok_test', $id_page);
 	$questions = get_field('spisok_voprosov', $id_page);
 
-	foreach($questions as $item) {
+	foreach ($questions as $item) {
 		$list_questions[] = [
 			'question' => $item['zagolovok'],
 			'answer' => $item['opisanie']
@@ -154,12 +403,12 @@ function art_page_proftestirovanie() {
 
 	$id_page_online = get_page_by_path('proftestirovanie/online-test', OBJECT, 'page')->ID;
 	$id_page_ofline = get_page_by_path('proftestirovanie/offline-test', OBJECT, 'page')->ID;
-	
+
 	$online = get_field('konsultanty_test', $id_page_online);
 	$offline = get_field('konsultanty_test', $id_page_ofline);
 	$consultants_online = null;
 	$consultants_offline = null;
-	foreach($online as $item) {
+	foreach ($online as $item) {
 
 		$img = $item['foto'];
 		$consultants_online[] = [
@@ -170,7 +419,7 @@ function art_page_proftestirovanie() {
 		];
 	}
 
-	foreach($offline as $item) {
+	foreach ($offline as $item) {
 
 		$img = $item['foto'];
 		$consultants_offline[] = [
@@ -181,7 +430,7 @@ function art_page_proftestirovanie() {
 		];
 	}
 
-	$array_merge_consultants = array_merge( $consultants_online, $consultants_offline );
+	$array_merge_consultants = array_merge($consultants_online, $consultants_offline);
 
 	$consultants = [];
 	$test = [];
@@ -1252,7 +1501,7 @@ function art_page_psychologist()
 
 	// сделать поле в админке izobrazhenie
 	// $banner = get_field('izobrazhenie', $id_page); 
-	$banner = ''; 
+	$banner = '';
 
 	$title_first = get_field('title_psychologist', $id_page);
 
