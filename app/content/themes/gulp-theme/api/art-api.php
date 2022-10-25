@@ -109,7 +109,33 @@ add_action('rest_api_init', function () {
 		'callback' => 'art_page_team',
 		'permission_callback' => '__return_true'
 	]);
+	// Вакансии + Вакансия
+	register_rest_route($prefix, 'page/vacancies', [
+		'methods' => 'GET',
+		'callback' => 'art_page_vacancies',
+		'permission_callback' => '__return_true'
+	]);
+	register_rest_route($prefix, 'page/vacancies/(?P<slug>[a-zA-Z0-9-]+)', [
+		'methods' => 'GET',
+		'callback' => 'art_page_vacancies_post',
+		'permission_callback' => '__return_true'
+	]);
+
+	// Проекты + Проект
+	register_rest_route($prefix, 'page/projects', [
+		'methods' => 'GET',
+		'callback' => 'art_page_projects',
+		'permission_callback' => '__return_true'
+	]);
+	register_rest_route($prefix, 'page/projects/(?P<slug>[a-zA-Z0-9-]+)', [
+		'methods' => 'GET',
+		'callback' => 'art_page_projects_post',
+		'permission_callback' => '__return_true'
+	]);
+
 });
+
+
 
 // Для сортировки многомерных массивов по ключу
 function build_sorter($key)
@@ -117,6 +143,234 @@ function build_sorter($key)
 	return function ($a, $b) use ($key) {
 		return strnatcmp($a[$key], $b[$key]);
 	};
+}
+
+function art_page_projects()
+{
+	$data = [];
+	$my_page = get_page_by_path('projects', OBJECT, 'page');
+	$id_page = $my_page->ID;
+	$post = get_post($id_page);
+	$content = apply_filters('the_content', $post->post_content);
+	$id_video = get_field('video_blogs', $id_page);
+	$banner = get_field('background_blogs', $id_page);
+	
+	$args = [
+		'post_type' => 'projects',
+		'numberposts' 	=> 6,
+	];
+
+	$projects = get_posts($args);
+	$i = 0;
+
+	foreach ($projects as $post) {
+		$id = $post->ID;
+		$description = get_field('zagolovok_dlya_anonsa', $id);
+		$img = get_field('izobrazhenie_dlya_anonsa', $id);
+		
+		// Added to api
+		$data_projects[$i]['id'] = $id;
+		$data_projects[$i]['title'] = $post->post_title;
+		$data_projects[$i]['description'] = $description;
+		$data_projects[$i]['slug'] = $post->post_name;
+		$data_projects[$i]['img'] = ['url' => $img['url'], 'alt' => $img['title']];
+
+		$i++;
+	}
+
+	$my_issled = get_page_by_path('issledovanie', OBJECT, 'page');
+	$id_issled = $my_issled->ID;
+	$post_issled = get_post($id_issled);
+
+	$img_issled = get_field('izobrazhenie-3', $id_issled);
+	$description_issled = get_field('description-3', $id_issled);
+	$issledovanie = [
+		[
+			'id' => $id_issled,
+			'title' => $post_issled->post_title,
+			'description' => $description_issled,
+			'slug' => $post_issled->post_name,
+			'img' => ['url' => $img_issled['url'], 'alt' => $img_issled['title']]
+		]
+	];
+
+	$all_projects = array_merge( $issledovanie, $data_projects );
+
+	$data['id_page'] = $id_page;
+	$data['content'] = $content;
+	$data['banner'] = ['url' => $banner['url'], 'alt' => $banner['title']];
+	$data['id_video'] = $id_video;
+	$data['projects'] = $all_projects;
+
+	return $data;
+}
+
+function art_page_projects_post($slug)
+{
+	$data = [];
+
+	if($slug['slug'] === 'issledovanie') {
+		$data['id'] = 'issledovanie';
+	} else {
+
+		$args = [
+			'post_type' => 'projects',
+			'name' 	=> $slug['slug'],
+		];
+		$post = get_posts($args);
+		$id = $post[0]->ID;
+	
+		$content = $post[0]->post_content;
+		$content = apply_filters('the_content', $content);
+		$content = str_replace(']]>', ']]&gt;', $content);
+	
+		
+	
+		$data['id'] = $id;
+		$data['title'] = $post[0]->post_title;
+
+	}
+	
+	
+
+	return $data;
+}
+
+function art_page_vacancies()
+{
+	$data = [];
+	$my_page = get_page_by_path('jobs', OBJECT, 'page');
+	$id_page = $my_page->ID;
+	$post = get_post($id_page);
+	$content = apply_filters('the_content', $post->post_content);
+	$id_video = get_field('id_video', $id_page);
+	$banner = get_field('izobrazhenie_bac', $id_page);
+	$args = [
+		'post_type' => 'vacancies',
+		'numberposts' 	=> 6,
+	];
+
+	$vacancies = get_posts($args);
+	$i = 0;
+
+	foreach ($vacancies as $post) {
+		$id = $post->ID;
+		$description = get_field('kratkoe_opisanie', $id);
+		$benefits_array = get_field('preimushhestva-job', $id);
+		foreach ($benefits_array as $item) {
+			$benefits[] = $item['preimushhestvo'];
+		}
+		$img_array = get_field('images-job', $id);
+		foreach ($img_array as $item) {
+			$img = $item['image'];
+			$img_list[] = ['url' => $img['url'], 'alt' => $img['title']];
+		}
+		// Added to api
+		$data_vacancies[$i]['id'] = $id;
+		$data_vacancies[$i]['title'] = $post->post_title;
+		$data_vacancies[$i]['description'] = $description;
+		$data_vacancies[$i]['slug'] = $post->post_name;
+		$data_vacancies[$i]['benefits'] = $benefits;
+		$data_vacancies[$i]['img'] = $img_list[0];
+
+		$i++;
+	}
+
+
+	$img = get_field('izobrazhenie_jobs', $id_page);
+	$novacancies = [
+		'title' => get_field('zagolovok', $id_page),
+		'description' => get_field('description_jobs', $id_page),
+		'email' => get_field('pochta_jobs', $id_page),
+		'img' => ['url' => $img['url'], 'alt' => $img['title']]
+	];
+
+	$data['id_page'] = $id_page;
+	$data['content'] = $content;
+	$data['banner'] = ['url' => $banner['url'], 'alt' => $banner['title']];
+	$data['id_video'] = $id_video;
+	$data['vacancies'] = $data_vacancies;
+	$data['no_vacancies'] = $novacancies;
+
+	return $data;
+}
+
+function art_page_vacancies_post($slug)
+{
+	$data = [];
+	$args = [
+		'post_type' => 'vacancies',
+		'name' 	=> $slug['slug'],
+	];
+	$post = get_posts($args);
+	$id = $post[0]->ID;
+
+	$content = $post[0]->post_content;
+	$content = apply_filters('the_content', $content);
+	$content = str_replace(']]>', ']]&gt;', $content);
+
+	$place_work = get_field('mesto_raboty', $id);
+	$description = get_field('kratkoe_opisanie', $id);
+
+	$benefits_array = get_field('preimushhestva-job', $id);
+	foreach ($benefits_array as $item) {
+		$benefits[] = $item['preimushhestvo'];
+	}
+
+	$first_title = get_field('zagolovok_pervogo_bloka', $id);
+	$first_list_array = get_field('chto_nuzhno_delat', $id);
+	foreach ($first_list_array as $item) {
+		$first_list[] = $item['naimenovanie'];
+	}
+	$first_block = [
+		'title' => $first_title,
+		'first_list' => $first_list
+	];
+
+	$second_title = get_field('zagolovok_vtorogo_bloka', $id);
+	$second_list_array = get_field('chego_my_zhdem', $id);
+	foreach ($second_list_array as $item) {
+		$second_list[] = $item['naimenovanie'];
+	}
+	$second_block = [
+		'title' => $second_title,
+		'second_list' => $second_list
+	];
+
+	$third_title = get_field('zagolovok_tri_bloka', $id);
+	$third_list_array = get_field('chto_predlagaem', $id);
+	$img_array = get_field('images-job', $id);
+	foreach ($img_array as $item) {
+		$img = $item['image'];
+		$img_list[] = ['url' => $img['url'], 'alt' => $img['title']];
+	}
+	foreach ($third_list_array as $item) {
+		$third_list[] = $item['naimenovanie'];
+	}
+	$third_block = [
+		'title' => $third_title,
+		'third_list' => $third_list,
+		'img_list' => $img_list
+	];
+
+	$send_resume = [
+		'title' => get_field('otpravit_rezyume', $id),
+		'email' => get_field('svyazatsya_s_nami', $id)
+	];
+
+	$data['id'] = $id;
+	$data['title'] = $post[0]->post_title;
+	$data['description'] = $description;
+	$data['place_work'] = $place_work;
+	$data['description'] = $description;
+	$data['slug'] = $post[0]->post_name;
+	$data['benefits'] = $benefits;
+	$data['first_block'] = $first_block;
+	$data['second_block'] = $second_block;
+	$data['third_block'] = $third_block;
+	$data['send_resume'] = $send_resume;
+
+	return $data;
 }
 
 function art_page_team()
