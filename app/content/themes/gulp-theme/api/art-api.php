@@ -210,7 +210,224 @@ function art_page_projects_post($slug)
 	$data = [];
 
 	if($slug['slug'] === 'issledovanie') {
-		$data['id'] = 'issledovanie';
+
+		$data = [];
+		$my_page = get_page_by_path('issledovanie', OBJECT, 'page');
+		$id_page = $my_page->ID;
+		$post = get_post($id_page);
+		$content = apply_filters('the_content', $post->post_content);
+		$id_video = get_field('id_video', $id_page);
+		$banner = get_field('image_issled', $id_page);
+
+		$studies = [
+			'title_hh' => get_field('title-hh', $id_page),
+			'description_hh' => get_field('description-hh', $id_page),
+			'title_art' => get_field('title-art', $id_page),
+			'description_art' => get_field('description-art', $id_page),
+		];
+
+		$staff_array = get_field('psihologi_art_lichnosti', $id_page);
+		foreach( $staff_array as $item ) {
+			$img = $item['izobrazhenie'];
+			$staff[] = [
+				'photo' => ['url' => $img['url'], 'alt' => $img['title']],
+				'name' => $item['imya'],
+				'position' => $item['dolzhnost'],
+				'description' => $item['opisanie']
+			];
+		}
+		$img_1 = get_field('izobrazhenie-3', $id_page);
+		$study_description = [
+			'title' => get_field('title-isl-3', $id_page),
+			'description' => get_field('description-3', $id_page),
+			'img' => ['url' => $img_1['url'], 'alt' => $img_1['title']]
+		];
+
+		$list_thanks_array = get_field('chto_predlagaem', $id_page);
+		foreach( $list_thanks_array as $item ) {
+			$list_thanks[] = $item['naimenovanie'];
+		}
+		$thanks_block = [
+			'title' => get_field('title-isl-4', $id_page),
+			'list' => $list_thanks
+		];
+
+		$list_introduction_array = get_field('chto_predlagaem_2', $id_page);
+		foreach( $list_introduction_array as $item ) {
+			$img_2 = $item['izobrazhenie-5'];
+			$list_introduction[] = [
+				'title' => $item['naimenovanie_2'],
+				'img' => ['url' => $img_2['url'], 'alt' => $img_2['title']]
+			];
+		}
+		$introduction_block = [
+			'title' => get_field('title-isl-5', $id_page),
+			'list' => $list_introduction
+		];
+
+		$img_block = get_field('izobrazhenie-6', $id_page);
+
+		$img_7 = get_field('izobrazhenie-7', $id_page);
+		$important_criteria = [
+			'title' => get_field('title-isl-7', $id_page),
+			'description' => get_field('description-isl-7', $id_page),
+			'img' => ['url' => $img_7['url'], 'alt' => $img_7['title']]
+		];
+
+		$img_8 = get_field('izobrazhenie-8', $id_page);
+		$important_criteria_teen = [
+			'title' => get_field('title-isl-8', $id_page),
+			'img' => ['url' => $img_8['url'], 'alt' => $img_8['title']]
+		];
+
+		$img_9 = get_field('izobrazhenie-9', $id_page);
+		$soft_skills = [
+			'title' => get_field('title-isl-9', $id_page),
+			'description' => get_field('description-isl-7', $id_page),
+			'img' => ['url' => $img_7['url'], 'alt' => $img_7['title']],
+			'text' => get_field('text-9', $id_page)
+		];
+
+		$img_10 = get_field('izobrazhenie-10', $id_page);
+		$img_11 = get_field('izobrazhenie-9', $id_page);
+		$skills_assessment = [
+			'title' => get_field('title-isl-10', $id_page),
+			'description' => get_field('subtitle-isl-10-1', $id_page),
+			'img' => ['url' => $img_10['url'], 'alt' => $img_10['title']],
+			'text' => get_field('subtitle-isl-10-2', $id_page),
+			'description2' => get_field('subtitle-isl-11-1', $id_page),
+			'img2' => ['url' => $img_11['url'], 'alt' => $img_11['title']],
+			'description3' => get_field('subtitle-isl-11-2', $id_page),
+		];
+
+		$img_12 = get_field('izobrazhenie-12', $id_page);
+		$img_13 = get_field('izobrazhenie-13', $id_page);
+		$work_direction = [
+			'title' => get_field('title-isl-12', $id_page),
+			'description' => get_field('subtitle-isl-12-1', $id_page),
+			'img' => ['url' => $img_12['url'], 'alt' => $img_12['title']],
+			'description2' => get_field('subtitle-isl-12-2', $id_page),
+			'img2' => ['url' => $img_13['url'], 'alt' => $img_13['title']],
+			'description3' => get_field('subtitle-isl-13', $id_page),
+		];
+
+		$img_14 = get_field('izobrazhenie-14', $id_page);
+		$img_15 = get_field('izobrazhenie-15', $id_page);
+		$img_16 = get_field('izobrazhenie-16', $id_page);
+		$feedback = [
+			'title' => get_field('title-isl-14', $id_page),
+			'description' => get_field('description-isl-14', $id_page),
+			'img' => ['url' => $img_14['url'], 'alt' => $img_14['title']],
+			'img2' => ['url' => $img_15['url'], 'alt' => $img_15['title']],
+			'title2' => get_field('title-isl-16', $id_page),
+			'description2' => get_field('subtitle-isl-16', $id_page),
+			'img3' => ['url' => $img_16['url'], 'alt' => $img_16['title']],
+		];
+		
+		$img_17 = get_field('izobrazhenie-17', $id_page);
+		$hire = [
+			'title' => get_field('title-isl-17', $id_page),
+			'description' => get_field('subtitle-isl-17', $id_page),
+			'img' => ['url' => $img_17['url'], 'alt' => $img_17['title']],
+		];
+
+		$popular_skills = [
+			'title' => get_field('title-isl-18', $id_page),
+			'description' => get_field('description-isl-18', $id_page),
+		];
+
+		$img_19 = get_field('izobrazhenie-19', $id_page);
+		$where_to_work = [
+			'title' => get_field('title-isl-19', $id_page),
+			'description' => get_field('subtitle-isl-19', $id_page),
+			'img' => ['url' => $img_19['url'], 'alt' => $img_19['title']],
+		];
+
+		$img_20 = get_field('izobrazhenie-20', $id_page);
+		$position = [
+			'title' => get_field('title-isl-20', $id_page),
+			'description' => get_field('subtitle-isl-20', $id_page),
+			'img' => ['url' => $img_20['url'], 'alt' => $img_20['title']],
+		];
+		
+		$img_21 = get_field('izobrazhenie-21', $id_page);
+		$occupation = [
+			'title' => get_field('title-isl-21', $id_page),
+			'description' => get_field('subtitle-isl-21', $id_page),
+			'img' => ['url' => $img_21['url'], 'alt' => $img_21['title']],
+		];
+
+		$img_22 = get_field('izobrazhenie-22', $id_page);
+		$img_23 = get_field('izobrazhenie-23', $id_page);
+		$img_24 = get_field('izobrazhenie-24', $id_page);
+		$img_25 = get_field('izobrazhenie-25', $id_page);
+		$img_26 = get_field('izobrazhenie-26', $id_page);
+		$img_27 = get_field('izobrazhenie-27', $id_page);
+		$img_28 = get_field('izobrazhenie-28', $id_page);
+		$skills = [
+			'title' => get_field('title-isl-22', $id_page),
+			'description' => get_field('subtitle-isl-22', $id_page),
+			'img' => ['url' => $img_22['url'], 'alt' => $img_22['title']],
+
+			'title_diligence' => get_field('title-isl-23', $id_page),
+			'description_diligence' => get_field('subtitle-isl-23', $id_page),
+			'img_diligence' => ['url' => $img_23['url'], 'alt' => $img_23['title']],
+
+			'title_logical_thinking' => get_field('title-isl-24', $id_page),
+			'description_logical_thinking' => get_field('subtitle-isl-24', $id_page),
+			'img_logical_thinking' => ['url' => $img_24['url'], 'alt' => $img_24['title']],
+
+			'title_self_criticism' => get_field('title-isl-25', $id_page),
+			'description_self_criticism' => get_field('subtitle-isl-25', $id_page),
+			'img_self_criticism' => ['url' => $img_25['url'], 'alt' => $img_25['title']],
+
+			'title_erudition' => get_field('title-isl-26', $id_page),
+			'description_erudition' => get_field('subtitle-isl-26', $id_page),
+			'img_erudition' => ['url' => $img_26['url'], 'alt' => $img_26['title']],
+
+			'title_intuition' => get_field('title-isl-27', $id_page),
+			'description_intuition' => get_field('subtitle-isl-27', $id_page),
+			'img_intuition' => ['url' => $img_27['url'], 'alt' => $img_27['title']],
+
+			'title_еvaluation' => get_field('title-isl-28', $id_page),
+			'img_еvaluation' => ['url' => $img_28['url'], 'alt' => $img_28['title']],
+		];
+
+		$img_29 = get_field('izobrazhenie-29', $id_page);
+		$img_30 = get_field('izobrazhenie-29_2', $id_page);
+		$img_31 = get_field('izobrazhenie-29_3', $id_page);
+		$teenager_at_work = [
+			'title' => get_field('title-isl-21', $id_page),
+			'description' => get_field('subtitle-isl-21', $id_page),
+			'img1' => ['url' => $img_29['url'], 'alt' => $img_29['title']],
+			'img2' => ['url' => $img_30['url'], 'alt' => $img_30['title']],
+			'img3' => ['url' => $img_31['url'], 'alt' => $img_31['title']],
+		];
+
+		// $data['id_page'] = $id_page;
+			// $data['content'] = $content;
+			// $data['banner'] = ['url' => $banner['url'], 'alt' => $banner['title']];
+			// $data['id_video'] = $id_video;
+			// $data['studies'] = $studies;
+			// $data['staff'] = $staff;
+			// $data['study_description'] = $study_description;
+			// $data['thanks_block'] = $thanks_block;
+			// $data['introduction_block'] = $introduction_block;
+			// $data['img_block'] = ['url' => $img_block['url'], 'alt' => $img_block['title']];
+			// $data['important_criteria'] = $important_criteria;
+			// $data['important_criteria_teen'] = $important_criteria_teen;
+			// $data['soft_skills'] = $soft_skills;
+			// $data['skills_assessment'] = $skills_assessment;
+			// $data['work_direction'] = $work_direction;
+			// $data['feedback'] = $feedback;
+			// $data['hire'] = $hire;
+			// $data['popular_skills'] = $popular_skills;
+			// $data['where_to_work'] = $where_to_work;
+		// $data['occupation'] = $occupation;
+		// $data['skills'] = $skills;
+		// $data['teenager_at_work'] = $teenager_at_work;
+		$data['teenager_at_work'] = $teenager_at_work;
+
 	} else {
 
 		$args = [
@@ -223,16 +440,76 @@ function art_page_projects_post($slug)
 		$content = $post[0]->post_content;
 		$content = apply_filters('the_content', $content);
 		$content = str_replace(']]>', ']]&gt;', $content);
-	
-		
-	
+
+		$list_numbers_array = get_field('spisok_dostizhenij', $id);
+		foreach ($list_numbers_array as $item) {
+			$img = $item['ikonka'];
+			$list_numbers[] = [
+				'qty' => $item['kolichestvo'],
+				'description' => $item['opisanie'],
+				'icon' => ['url' => $img['url'], 'alt' => $img['title']]
+			];
+		}
+		$project_numbers = [
+			'title' => get_field('zagolovok', $id),
+			'list' => $list_numbers
+		];
+
+		$list_important_array = get_field('spisok_miss', $id);
+		$list_important = null;
+		foreach ($list_important_array as $item) {
+			$list_important[] = $item['naimenovanie'];
+		}
+		$important = [
+			'title' => get_field('zagolovok_miss', $id),
+			'list' => $list_important
+		];
+
+		$img_history = get_field('izobrazhenie', $id);
+		$history = [
+			'title' => get_field('zagolovok_2', $id),
+			'description' => get_field('tekst_2', $id),
+			'img' => ['url' => $img_history['url'], 'alt' => $img_history['title']]
+		];
+
+		$list_convention_array = get_field('spisok_3', $id);
+		$list_convention = null;
+		foreach ($list_convention_array as $item) {
+			$list_convention[] = $item['nazvanie'];
+		}
+		$what_convention = [
+			'title' => get_field('zagolovok_3', $id),
+			'list' => $list_convention
+		];
+		$list_do_array = get_field('spisok_4', $id);
+		foreach ($list_do_array as $item) {
+			$img = $item['izobrazhenie'];
+			$list_item_array = $item['spisok'];
+			$list_item = null;
+			foreach ($list_item_array as $item2) {
+				$list_item[] = $item2['nazvanie'];
+			}
+			$list_do[] = [
+				'title_item' => $item['nazvanie'],
+				'img_item' => ['url' => $img['url'], 'alt' => $img['title']],
+				'list_item' => $list_item
+			];
+		}
+		$what_do = [
+			'title' => get_field('zagolovok_4', $id),
+			'list' => $list_do
+		];
+
 		$data['id'] = $id;
 		$data['title'] = $post[0]->post_title;
+		$data['project_numbers'] = $project_numbers;
+		$data['important'] = $important;
+		$data['history'] = $history;
+		$data['what_convention'] = $what_convention;
+		$data['what_do'] = $what_do;
 
 	}
 	
-	
-
 	return $data;
 }
 
