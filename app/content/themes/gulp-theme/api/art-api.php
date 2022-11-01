@@ -33,10 +33,15 @@ add_action('rest_api_init', function () {
 		'callback' => 'art_page_psychologist',
 		'permission_callback' => '__return_true'
 	]);
-	// Лагерь
+	// Лагерь + фильтр + страница документа
 	register_rest_route($prefix, 'page/camp', [
 		'methods' => 'GET',
 		'callback' => 'art_page_camp',
+		'permission_callback' => '__return_true'
+	]);
+	register_rest_route($prefix, 'page/docs/(?P<slug>[a-zA-Z0-9-]+)', [
+		'methods' => 'GET',
+		'callback' => 'art_page_doc_post',
 		'permission_callback' => '__return_true'
 	]);
 	register_rest_route($prefix, 'camp/filter', [
@@ -68,10 +73,15 @@ add_action('rest_api_init', function () {
 		'callback' => 'art_page_merch',
 		'permission_callback' => '__return_true'
 	]);
-	// Курсы
+	// Курсы + страница курса
 	register_rest_route($prefix, 'page/courses', [
 		'methods' => 'GET',
 		'callback' => 'art_page_courses',
+		'permission_callback' => '__return_true'
+	]);
+	register_rest_route($prefix, 'page/courses/(?P<slug>[a-zA-Z0-9-]+)', [
+		'methods' => 'GET',
+		'callback' => 'art_page_courses_post',
 		'permission_callback' => '__return_true'
 	]);
 	register_rest_route($prefix, 'courses/filter', [
@@ -132,10 +142,7 @@ add_action('rest_api_init', function () {
 		'callback' => 'art_page_projects_post',
 		'permission_callback' => '__return_true'
 	]);
-
 });
-
-
 
 // Для сортировки многомерных массивов по ключу
 function build_sorter($key)
@@ -154,7 +161,7 @@ function art_page_projects()
 	$content = apply_filters('the_content', $post->post_content);
 	$id_video = get_field('video_blogs', $id_page);
 	$banner = get_field('background_blogs', $id_page);
-	
+
 	$args = [
 		'post_type' => 'projects',
 		'numberposts' 	=> 6,
@@ -167,7 +174,7 @@ function art_page_projects()
 		$id = $post->ID;
 		$description = get_field('zagolovok_dlya_anonsa', $id);
 		$img = get_field('izobrazhenie_dlya_anonsa', $id);
-		
+
 		// Added to api
 		$data_projects[$i]['id'] = $id;
 		$data_projects[$i]['title'] = $post->post_title;
@@ -194,7 +201,7 @@ function art_page_projects()
 		]
 	];
 
-	$all_projects = array_merge( $issledovanie, $data_projects );
+	$all_projects = array_merge($issledovanie, $data_projects);
 
 	$data['id_page'] = $id_page;
 	$data['content'] = $content;
@@ -209,7 +216,7 @@ function art_page_projects_post($slug)
 {
 	$data = [];
 
-	if($slug['slug'] === 'issledovanie') {
+	if ($slug['slug'] === 'issledovanie') {
 
 		$data = [];
 		$my_page = get_page_by_path('issledovanie', OBJECT, 'page');
@@ -227,7 +234,7 @@ function art_page_projects_post($slug)
 		];
 
 		$staff_array = get_field('psihologi_art_lichnosti', $id_page);
-		foreach( $staff_array as $item ) {
+		foreach ($staff_array as $item) {
 			$img = $item['izobrazhenie'];
 			$staff[] = [
 				'photo' => ['url' => $img['url'], 'alt' => $img['title']],
@@ -244,7 +251,7 @@ function art_page_projects_post($slug)
 		];
 
 		$list_thanks_array = get_field('chto_predlagaem', $id_page);
-		foreach( $list_thanks_array as $item ) {
+		foreach ($list_thanks_array as $item) {
 			$list_thanks[] = $item['naimenovanie'];
 		}
 		$thanks_block = [
@@ -253,7 +260,7 @@ function art_page_projects_post($slug)
 		];
 
 		$list_introduction_array = get_field('chto_predlagaem_2', $id_page);
-		foreach( $list_introduction_array as $item ) {
+		foreach ($list_introduction_array as $item) {
 			$img_2 = $item['izobrazhenie-5'];
 			$list_introduction[] = [
 				'title' => $item['naimenovanie_2'],
@@ -284,7 +291,7 @@ function art_page_projects_post($slug)
 		$soft_skills = [
 			'title' => get_field('title-isl-9', $id_page),
 			'description' => get_field('description-isl-7', $id_page),
-			'img' => ['url' => $img_7['url'], 'alt' => $img_7['title']],
+			'img' => ['url' => $img_9['url'], 'alt' => $img_9['title']],
 			'text' => get_field('text-9', $id_page)
 		];
 
@@ -323,7 +330,7 @@ function art_page_projects_post($slug)
 			'description2' => get_field('subtitle-isl-16', $id_page),
 			'img3' => ['url' => $img_16['url'], 'alt' => $img_16['title']],
 		];
-		
+
 		$img_17 = get_field('izobrazhenie-17', $id_page);
 		$hire = [
 			'title' => get_field('title-isl-17', $id_page),
@@ -349,7 +356,7 @@ function art_page_projects_post($slug)
 			'description' => get_field('subtitle-isl-20', $id_page),
 			'img' => ['url' => $img_20['url'], 'alt' => $img_20['title']],
 		];
-		
+
 		$img_21 = get_field('izobrazhenie-21', $id_page);
 		$occupation = [
 			'title' => get_field('title-isl-21', $id_page),
@@ -404,30 +411,46 @@ function art_page_projects_post($slug)
 			'img3' => ['url' => $img_31['url'], 'alt' => $img_31['title']],
 		];
 
-		// $data['id_page'] = $id_page;
-			// $data['content'] = $content;
-			// $data['banner'] = ['url' => $banner['url'], 'alt' => $banner['title']];
-			// $data['id_video'] = $id_video;
-			// $data['studies'] = $studies;
-			// $data['staff'] = $staff;
-			// $data['study_description'] = $study_description;
-			// $data['thanks_block'] = $thanks_block;
-			// $data['introduction_block'] = $introduction_block;
-			// $data['img_block'] = ['url' => $img_block['url'], 'alt' => $img_block['title']];
-			// $data['important_criteria'] = $important_criteria;
-			// $data['important_criteria_teen'] = $important_criteria_teen;
-			// $data['soft_skills'] = $soft_skills;
-			// $data['skills_assessment'] = $skills_assessment;
-			// $data['work_direction'] = $work_direction;
-			// $data['feedback'] = $feedback;
-			// $data['hire'] = $hire;
-			// $data['popular_skills'] = $popular_skills;
-			// $data['where_to_work'] = $where_to_work;
-		// $data['occupation'] = $occupation;
-		// $data['skills'] = $skills;
-		// $data['teenager_at_work'] = $teenager_at_work;
-		$data['teenager_at_work'] = $teenager_at_work;
+		$img_32 = get_field('izobrazhenie-30', $id_page);
+		$employment_benefits = [
+			'title' => get_field('title-isl-30', $id_page),
+			'description' => get_field('subtitle-isl-30', $id_page),
+			'img' => ['url' => $img_32['url'], 'alt' => $img_32['title']],
+		];
 
+		$img_33 = get_field('izobrazhenie-31', $id_page);
+		$employment_disadvantages = [
+			'title' => get_field('title-isl-31', $id_page),
+			'description' => get_field('subtitle-isl-31', $id_page),
+			'img' => ['url' => $img_33['url'], 'alt' => $img_33['title']],
+		];
+
+		$data['id_page'] = $id_page;
+		$data['slug'] = 'issledovanie';
+		$data['content'] = $content;
+		$data['banner'] = ['url' => $banner['url'], 'alt' => $banner['title']];
+		$data['id_video'] = $id_video;
+		$data['studies'] = $studies;
+		$data['staff'] = $staff;
+		$data['study_description'] = $study_description;
+		$data['thanks_block'] = $thanks_block;
+		$data['introduction_block'] = $introduction_block;
+		$data['img_block'] = ['url' => $img_block['url'], 'alt' => $img_block['title']];
+		$data['important_criteria'] = $important_criteria;
+		$data['important_criteria_teen'] = $important_criteria_teen;
+		$data['soft_skills'] = $soft_skills;
+		$data['skills_assessment'] = $skills_assessment;
+		$data['work_direction'] = $work_direction;
+		$data['feedback'] = $feedback;
+		$data['hire'] = $hire;
+		$data['popular_skills'] = $popular_skills;
+		$data['where_to_work'] = $where_to_work;
+		$data['position'] = $position;
+		$data['occupation'] = $occupation;
+		$data['skills'] = $skills;
+		$data['teenager_at_work'] = $teenager_at_work;
+		$data['employment_benefits'] = $employment_benefits;
+		$data['employment_disadvantages'] = $employment_disadvantages;
 	} else {
 
 		$args = [
@@ -436,7 +459,7 @@ function art_page_projects_post($slug)
 		];
 		$post = get_posts($args);
 		$id = $post[0]->ID;
-	
+
 		$content = $post[0]->post_content;
 		$content = apply_filters('the_content', $content);
 		$content = str_replace(']]>', ']]&gt;', $content);
@@ -502,14 +525,14 @@ function art_page_projects_post($slug)
 
 		$data['id'] = $id;
 		$data['title'] = $post[0]->post_title;
+		$data['slug'] = $post[0]->post_name;
 		$data['project_numbers'] = $project_numbers;
 		$data['important'] = $important;
 		$data['history'] = $history;
 		$data['what_convention'] = $what_convention;
 		$data['what_do'] = $what_do;
-
 	}
-	
+
 	return $data;
 }
 
@@ -637,10 +660,10 @@ function art_page_vacancies_post($slug)
 
 	$data['id'] = $id;
 	$data['title'] = $post[0]->post_title;
+	$data['slug'] = $post[0]->post_name;
 	$data['description'] = $description;
 	$data['place_work'] = $place_work;
 	$data['description'] = $description;
-	$data['slug'] = $post[0]->post_name;
 	$data['benefits'] = $benefits;
 	$data['first_block'] = $first_block;
 	$data['second_block'] = $second_block;
@@ -980,11 +1003,21 @@ function art_page_offline_test()
 
 	foreach ($faq_array as $item) {
 		$faq[] = [
-			'answer' => $item['vopros'],
-			'question' => $item['otvet'],
+			'answer' => $item['otvet'],
+			'question' => $item['vopros'],
 		];
 	}
 
+	$my_page_proff = get_page_by_path('proftestirovanie', OBJECT, 'page');
+	$id_page_proff = $my_page_proff->ID;
+	$steps_form = get_field('spisok_punktov', $id_page_proff);
+	foreach ($steps_form as $item) {
+		$steps_form_items[] = $item['nazvanie'];
+	}
+	$img_steps_form = get_field('izobrazhenie_zayavka', $id_page_proff);
+	$step_form['steps_form_title'] = get_field('zagolovok_zayavka', $id_page_proff);
+	$step_form['steps_form_items'] = $steps_form_items;
+	$step_form['img_steps_form'] = ['url' => $img_steps_form['url'], 'alt' => $img_steps_form['title']];
 
 	$data['id_page'] = $id_page;
 	$data['content'] = $content;
@@ -997,6 +1030,7 @@ function art_page_offline_test()
 	$data['what_need'] = $what_need;
 	$data['consultants'] = $consultants;
 	$data['faq'] = $faq;
+	$data['step_form'] = $step_form;
 
 	return $data;
 }
@@ -1097,11 +1131,21 @@ function art_page_online_test()
 
 	foreach ($faq_array as $item) {
 		$faq[] = [
-			'answer' => $item['vopros'],
-			'question' => $item['otvet'],
+			'answer' => $item['otvet'],
+			'question' => $item['vopros'],
 		];
 	}
 
+	$my_page_proff = get_page_by_path('proftestirovanie', OBJECT, 'page');
+	$id_page_proff = $my_page_proff->ID;
+	$steps_form = get_field('spisok_punktov', $id_page_proff);
+	foreach ($steps_form as $item) {
+		$steps_form_items[] = $item['nazvanie'];
+	}
+	$img_steps_form = get_field('izobrazhenie_zayavka', $id_page_proff);
+	$step_form['steps_form_title'] = get_field('zagolovok_zayavka', $id_page_proff);
+	$step_form['steps_form_items'] = $steps_form_items;
+	$step_form['img_steps_form'] = ['url' => $img_steps_form['url'], 'alt' => $img_steps_form['title']];
 
 	$data['id_page'] = $id_page;
 	$data['content'] = $content;
@@ -1114,6 +1158,7 @@ function art_page_online_test()
 	$data['what_need'] = $what_need;
 	$data['consultants'] = $consultants;
 	$data['faq'] = $faq;
+	$data['step_form'] = $step_form;
 
 	return $data;
 }
@@ -1302,6 +1347,96 @@ function art_courses_filter($params)
 	return $data;
 }
 
+function art_page_courses_post($slug)
+{
+	$data = [];
+	$args = [
+		'post_type' => 'courses',
+		'name' 	=> $slug['slug'],
+	];
+	$post = get_posts($args);
+	$id = $post[0]->ID;
+	$description = get_field('description_course', $id);
+	$$title_problem = get_field('title_problem', $id);
+
+	$course_ages = get_the_terms($id, 'courses-ages');
+	$pattern = '/[^0-9]/';
+	$name_ages = null;
+	foreach ($course_ages as $item) {
+		$name_ages[] = (int)preg_replace($pattern, "", $item->name);
+	}
+	$period_ages = min($name_ages) . '-' . max($name_ages) . ' лет';
+	$list_problem_array = get_field('list_problem', $id);
+	$list_problem = null;
+	foreach ($list_problem_array as $item) {
+		$list_problem[] = $item['nazvanie'];
+	}
+	$img = get_field('img_problem', $id);
+	$description_course = [
+		'description' => $description,
+		'ages' => $period_ages,
+		'title' => $title_problem,
+		'list_problem' => $list_problem,
+		'img' => ['url' => $img['url'], 'alt' => $img['title']]
+	];
+
+	$to_do_list_array = get_field('spisok_del', $id);
+	$to_do_list = null;
+	foreach ($to_do_list_array as $item) {
+		$to_do_list[] = $item['nazvanie'];
+	}
+
+	$course_outcome_list_array = get_field('spisok_del', $id);
+	$course_outcome_list = null;
+	foreach ($course_outcome_list_array as $item) {
+		$course_outcome_list[] = $item['nazvanie'];
+	}
+
+	$about_course_array = get_field('spisok_del', $id);
+	$about_course = null;
+	foreach ($about_course_array as $item) {
+		$about_course[] = $item['nazvanie'];
+	}
+
+	$what_we_do = [
+		'to_do_title' => get_field('title_doing', $id),
+		'to_do_list' => $to_do_list,
+		'course_outcome_title' => get_field('zagolovok_rezultata_kursa', $id),
+		'course_outcome_list' => $course_outcome_list,
+		'about_course' => $about_course
+	];
+
+	$photo = get_field('photo', $id);
+	$educator = [
+		'name' => get_field('fio', $id),
+		'position' => get_field('dolzhnost', $id),
+		'photo' => ['url' => $photo['url'], 'alt' => $photo['title']],
+		'price' => get_field('czena', $id),
+		'one_time_fee' => get_field('edinorazovaya_plata', $id),
+	];
+
+	$my_page = get_page_by_path('courses', OBJECT, 'page');
+	$id_page = $my_page->ID;
+	$steps_form = get_field('spisok_punktov', $id_page);
+	foreach ($steps_form as $item) {
+		$steps_form_items[] = $item['nazvanie'];
+	}
+	$img_steps_form = get_field('izobrazhenie_razdel_lagerya', $id_page);
+	$step_form['steps_form_title'] = get_field('zagolovok_zayavka', $id_page);
+	$step_form['steps_form_items'] = $steps_form_items;
+	$step_form['img_steps_form'] = ['url' => $img_steps_form['url'], 'alt' => $img_steps_form['title']];
+
+	$data['id'] = $id;
+	$data['title'] = $post[0]->post_title;
+	$data['slug'] = $post[0]->post_name;
+	$data['description_course'] = $description_course;
+	$data['what_we_do'] = $what_we_do;
+	$data['educator'] = $educator;
+	$data['step_form'] = $step_form;
+
+	return $data;
+}
+
 function art_page_courses()
 {
 	$data = [];
@@ -1317,6 +1452,7 @@ function art_page_courses()
 	$description = get_field('description_courses', $id_page);
 
 	$arrayCourses = null;
+	$launch_group = null;
 
 	$terms = get_terms([
 		'taxonomy' => 'courses-category',
@@ -1337,6 +1473,7 @@ function art_page_courses()
 
 		$courses = query_posts($args);
 		$newCourses = [];
+		$launch_group_card = [];
 
 		foreach ($courses as $course) {
 
@@ -1350,13 +1487,20 @@ function art_page_courses()
 				$name_ages[] = (int)preg_replace($pattern, "", $item->name);
 			}
 			$period_ages = min($name_ages) . '-' . max($name_ages) . ' лет';
-
+			$availability_seats = get_field('availability_seats', $id);
 			$newCourses[] = [
 				'ID' => $id,
 				'post_title' => $course->post_title,
 				'post_slug' => $course->post_name,
 				'thumbnail' => ['url' => $image_miniatyura['url'], 'alt' => $image_miniatyura['title']],
 				'ages' => $period_ages
+			];
+			$launch_group_card[] = [
+				'ID' => $id,
+				'post_title' => $course->post_title,
+				'post_slug' => $course->post_name,
+				'ages' => $period_ages,
+				'availability_seats' => $availability_seats
 			];
 		}
 
@@ -1367,6 +1511,12 @@ function art_page_courses()
 			'description' => $term->description,
 			'count' => $term->count,
 			'camp_card' => $newCourses
+		];
+		$launch_group[] = [
+			'term_id' => $term->term_id,
+			'name' => $term->name,
+			'count' => $term->count,
+			'camp_card' => $launch_group_card
 		];
 	}
 
@@ -1460,10 +1610,11 @@ function art_page_courses()
 	$data['background_video'] = $background_video;
 	$data['content'] = $content;
 	$data['description'] = $description;
+	$data['filter'] = $filter;
+	$data['launch_group'] = $launch_group;
 	$data['courses'] = $arrayCourses;
 	$data['review'] = $review;
 	$data['about_courses'] = $about_courses;
-	$data['filter'] = $filter;
 	$data['step_form'] = $step_form;
 
 	return $data;
@@ -1598,6 +1749,138 @@ function art_page_skills()
 	}
 	$request_img = ['url' => get_field('izobrazhenie_razdel_lagerya', $id_page)['url'], 'alt' => get_field('izobrazhenie_razdel_lagerya', $id_page)['title']];
 
+	$past_shifts = [];
+	$args = [
+		'post_type' => 'camp',
+		'numberposts' 	=> -1,
+		'post_status'    => 'draft',
+		'tax_query' => [[
+			'taxonomy' => 'camp-section',
+			'field'    => 'slug',
+			'terms'    => 'skills'
+		]],
+	];
+
+	$posts = query_posts($args);
+
+	$i = 0;
+
+	foreach ($posts as $post) {
+		$id = $post->ID;
+		$thumbnail_url = get_field('image_miniatyura', $id);
+		// Added to api
+		$past_shifts[$i]['id'] = $id;
+		$past_shifts[$i]['title'] = $post->post_title;
+		$past_shifts[$i]['thumbnail_url'] = ['url' => $thumbnail_url['url'], 'alt' => $thumbnail_url['title']];
+		$past_shifts[$i]['slug'] = $post->post_name;
+
+		$i++;
+	}
+
+	$shift_selection = [];
+	$args_shift = [
+		'post_type' => 'camp',
+		'numberposts' 	=> -1,
+		'tax_query' => [[
+			'taxonomy' => 'camp-section',
+			'field'    => 'slug',
+			'terms'    => 'skills'
+		]],
+	];
+
+	$posts_shift = query_posts($args_shift);
+
+	$i = 0;
+
+	foreach ($posts_shift as $post) {
+		$id = $post->ID;
+		$card_profstart_array = get_field('profstart_cards', $id);
+		if ($card_profstart_array) {
+
+			
+			$card_profstart = null;
+			foreach ($card_profstart_array as $item) {
+				$img_shift = $item['image_card'];
+
+				$course_ages = $item['vozrast'];
+				$period_ages = null;
+				if($course_ages) {
+					$pattern = '/[^0-9]/';
+					$name_ages = null;
+					foreach ($course_ages as $item12) {
+						$name_ages[] = (int)preg_replace($pattern, "", $item12->name);
+					}
+					$period_ages = min($name_ages) . '-' . max($name_ages) . ' лет';
+				}
+				
+				$card_profstart[] = [
+					'title' => $item['title_card'],
+					'period' => get_field('period', $id),
+					'location' => get_field('location', $id),
+					'ages' => $name_ages,
+					'description' => $item['description_card'],
+					'seats' => $item['nalichie_mest_card'],
+					'price' => get_field('change_price', $id),
+					'price_certificate' => get_field('price_per_certificate', $id),
+					'thumbnail_url' => ['url' => $img_shift['url'], 'alt' => $img_shift['title']],
+					'age_title' => $period_ages,
+				];
+			}
+		}
+
+		$card_profi_array = get_field('profi_cards', $id);
+		if ($card_profi_array) {	
+			$card_profi = null;
+			foreach ($card_profi_array as $item) {
+				$img_shift = $item['image_card'];
+
+				$course_ages = $item['vozrast'];
+				$period_ages = null;
+				if($course_ages) {
+					$pattern = '/[^0-9]/';
+					$name_ages = null;
+					foreach ($course_ages as $item12) {
+						$name_ages[] = (int)preg_replace($pattern, "", $item12->name);
+					}
+					$period_ages = min($name_ages) . '-' . max($name_ages) . ' лет';
+				}
+				
+				$card_profi[] = [
+					'title' => $item['title_card'],
+					'period' => get_field('period', $id),
+					'location' => get_field('location', $id),
+					'ages' => $name_ages,
+					'description' => $item['description_card'],
+					'seats' => $item['nalichie_mest_card'],
+					'price' => get_field('change_price', $id),
+					'price_certificate' => get_field('price_per_certificate', $id),
+					'thumbnail_url' => ['url' => $img_shift['url'], 'alt' => $img_shift['title']],
+					'age_title' => $period_ages,
+				];
+			}
+		}
+
+		$profi_array = [
+			'description' => get_field('description_box_profi', $id),
+			'card' => $card_profi
+		];
+		$profstart_array = [
+			'description' => get_field('description_box_profstart', $id),
+			'card' => $card_profstart
+		];
+		// Added to api
+		$shift_selection[$i]['id'] = $id;
+		$shift_selection[$i]['title'] = $post->post_title;
+		$shift_selection[$i]['slug'] = $post->post_name;
+		$shift_selection[$i]['price'] = get_field('change_price', $id);
+		$shift_selection[$i]['price_certificate'] = get_field('price_per_certificate', $id);
+		$shift_selection[$i]['no_certificate'] = get_field('text_without_action', $id);
+		$shift_selection[$i]['profi'] = $profi_array;
+		$shift_selection[$i]['profstart'] = $profstart_array;
+
+		$i++;
+	}
+
 	$data['id_page'] = $my_page->term_id;
 	$data['background_img'] = $background_img;
 	$data['background_video'] = $background_video;
@@ -1606,6 +1889,8 @@ function art_page_skills()
 	$data['description_text'] = $content_description_section;
 	$data['description_img'] = $izobrazhenie;
 	$data['description_video'] = $id_video;
+
+	$data['shift_selection'] = $shift_selection;
 
 	$data['benefits_title'] = $benefits_title;
 	$data['benefits_parents'] = $benefits_parents;
@@ -1630,6 +1915,8 @@ function art_page_skills()
 	$data['request_title'] = $request_title;
 	$data['request'] = $request;
 	$data['request_img'] = $request_img;
+
+	$data['past_shifts'] = $past_shifts;
 
 	return $data;
 }
@@ -1703,6 +1990,34 @@ function art_page_professions()
 	}
 	$request_img = ['url' => get_field('izobrazhenie_razdel_lagerya', $id_page)['url'], 'alt' => get_field('izobrazhenie_razdel_lagerya', $id_page)['title']];
 
+	$past_shifts = [];
+	$args = [
+		'post_type' => 'camp',
+		'numberposts' 	=> -1,
+		'post_status'    => 'draft',
+		'tax_query' => [[
+			'taxonomy' => 'camp-section',
+			'field'    => 'slug',
+			'terms'    => 'professions'
+		]],
+	];
+
+	$posts = query_posts($args);
+
+	$i = 0;
+
+	foreach ($posts as $post) {
+		$id = $post->ID;
+		$thumbnail_url = get_field('image_miniatyura', $id);;
+		// Added to api
+		$past_shifts[$i]['id'] = $id;
+		$past_shifts[$i]['title'] = $post->post_title;
+		$past_shifts[$i]['thumbnail_url'] = ['url' => $thumbnail_url['url'], 'alt' => $thumbnail_url['title']];
+		$past_shifts[$i]['slug'] = $post->post_name;
+
+		$i++;
+	}
+
 	$data['id_page'] = $my_page->term_id;
 	$data['background_img'] = $background_img;
 	$data['background_video'] = $background_video;
@@ -1735,6 +2050,8 @@ function art_page_professions()
 	$data['request_title'] = $request_title;
 	$data['request'] = $request;
 	$data['request_img'] = $request_img;
+
+	$data['past_shifts'] = $past_shifts;
 
 	return $data;
 }
@@ -1811,6 +2128,34 @@ function art_page_tourist_holidays()
 	}
 	$request_img = ['url' => get_field('izobrazhenie_razdel_lagerya', $id_page)['url'], 'alt' => get_field('izobrazhenie_razdel_lagerya', $id_page)['title']];
 
+	$past_shifts = [];
+	$args = [
+		'post_type' => 'camp',
+		'numberposts' 	=> -1,
+		'post_status'    => 'draft',
+		'tax_query' => [[
+			'taxonomy' => 'camp-section',
+			'field'    => 'slug',
+			'terms'    => 'tourist-holidays'
+		]],
+	];
+
+	$posts = query_posts($args);
+
+	$i = 0;
+
+	foreach ($posts as $post) {
+		$id = $post->ID;
+		$thumbnail_url = get_field('image_miniatyura', $id);;
+		// Added to api
+		$past_shifts[$i]['id'] = $id;
+		$past_shifts[$i]['title'] = $post->post_title;
+		$past_shifts[$i]['thumbnail_url'] = ['url' => $thumbnail_url['url'], 'alt' => $thumbnail_url['title']];
+		$past_shifts[$i]['slug'] = $post->post_name;
+
+		$i++;
+	}
+
 	$data['id_page'] = $my_page->term_id;
 	$data['background_img'] = $background_img;
 	$data['background_video'] = $background_video;
@@ -1844,6 +2189,49 @@ function art_page_tourist_holidays()
 	$data['request'] = $request;
 	$data['request_img'] = $request_img;
 
+	$data['past_shifts'] = $past_shifts;
+
+	return $data;
+}
+
+function art_page_doc_post($slug)
+{
+	$data = [];
+	$args = [
+		'post_type' => 'docs',
+		'name' 	=> $slug['slug'],
+	];
+	$post = get_posts($args);
+	$id = $post[0]->ID;
+	$subtitle_docs = get_field('subtitle_docs', $id);
+	$content = apply_filters('the_content', get_field('content_docs', $id));
+
+	$arrayDocs = null;
+	$argsDocs = [
+		'post_type' => 'docs'
+	];
+
+	$docs = query_posts($argsDocs);
+
+	foreach ($docs as $doc) {
+
+		$id = $doc->ID;
+
+		$arrayDocs[] = [
+			'id' => $id,
+			'slug' => $doc->post_name,
+			'title' => $doc->post_title,
+			'subtitle' => get_field('subtitle_docs', $id)
+		];
+	}
+
+	$data['id'] = $id;
+	$data['title'] = $post[0]->post_title;
+	$data['slug'] = $post[0]->post_name;
+	$data['subtitle_docs'] = $subtitle_docs;
+	$data['content'] = $content;
+	$data['docs'] = $arrayDocs;
+	
 	return $data;
 }
 
@@ -2248,9 +2636,9 @@ function art_page_blogs_post($slug)
 	// Added to api
 	$data['id'] = $id;
 	$data['title'] = $post[0]->post_title;
+	$data['slug'] = $post[0]->post_name;
 	$data['get_the_post_thumbnail_url'] = $get_the_post_thumbnail_url;
 	$data['content'] = $content;
-	$data['slug'] = $post[0]->post_name;
 
 	return $data;
 }
