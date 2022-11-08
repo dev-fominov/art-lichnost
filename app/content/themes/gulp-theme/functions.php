@@ -28,7 +28,6 @@ function remove_styles()
 }
 add_action('wp_print_styles', 'remove_styles', 100);
 
-
 function add_custom_taxonomies()
 {
 	// Camp
