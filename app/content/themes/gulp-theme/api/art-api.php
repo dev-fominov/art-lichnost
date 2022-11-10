@@ -33,10 +33,15 @@ add_action('rest_api_init', function () {
 		'callback' => 'art_page_psychologist',
 		'permission_callback' => '__return_true'
 	]);
-	// Лагерь + фильтр + страница документа
+	// Лагерь + фильтр + страница документа + страница прошлой смены
 	register_rest_route($prefix, 'page/camp', [
 		'methods' => 'GET',
 		'callback' => 'art_page_camp',
+		'permission_callback' => '__return_true'
+	]);
+	register_rest_route($prefix, 'page/camp/(?P<slug>[a-zA-Z0-9-]+)', [
+		'methods' => 'GET',
+		'callback' => 'art_page_camp_post',
 		'permission_callback' => '__return_true'
 	]);
 	register_rest_route($prefix, 'page/docs/(?P<slug>[a-zA-Z0-9-]+)', [
@@ -869,7 +874,6 @@ function art_page_team()
 				$req_list[] = $item['trebovanie'];
 			}
 		}
-
 
 		$duties_array = get_field('obyazannosti-timlid', $id_page);
 		$duties = [];
@@ -2594,6 +2598,41 @@ function art_camp_filter($params)
 	return $data;
 }
 
+function art_page_camp_post($slug)
+{
+	$data = [];
+
+	$args = [
+		'post_type' 		=> 'camp',
+		'post_status'   => 'draft',
+		'name' 					=> $slug['slug'],
+	];
+	$post = get_posts($args);
+	if ($post) {
+		$id = $post[0]->ID;
+		$content = $post[0]->post_content;
+		$content = apply_filters('the_content', $content);
+		$content = str_replace(']]>', ']]&gt;', $content);
+
+		$photo_slider = get_field('photo-slider', $id);
+		$slider = [];
+		if ($photo_slider) {
+			foreach ($photo_slider as $item) {
+				$slider[] = [$item['photo']['url'], $item['photo']['title']];
+			}
+		}
+
+		// Added to api
+		$data['id'] = $id;
+		$data['title'] = $post[0]->post_title;
+		$data['slug'] = $post[0]->post_name;
+		$data['content'] = $content;
+		$data['photo_slider'] = $slider;
+	}
+
+	return $data;
+}
+
 function art_page_camp()
 {
 	$data = [];
@@ -2634,11 +2673,13 @@ function art_page_camp()
 						$id = $camp->ID;
 
 						$image_miniatyura = get_field('image_miniatyura', $id);
+						$info = get_field('info-card', $id);
 
 						$newCamps[] = [
 							'ID' => $id,
 							'post_title' => $camp->post_title,
 							'post_slug' => $camp->post_name,
+							'info' => $info,
 							'thumbnail' => ['url' => $image_miniatyura['url'], 'alt' => $image_miniatyura['title']],
 							'location' => get_field('location', $id)
 						];
