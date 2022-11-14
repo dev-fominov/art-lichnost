@@ -15,6 +15,10 @@ function gulp_scripts()
 	// при подключении slick.min.js будут проблемы с работой слайдеров
 	wp_enqueue_script('slick-script', get_template_directory_uri() . '/assets/js/slick.js', array(), '1.1', true);
 	wp_enqueue_script('gulp-script', get_template_directory_uri() . '/assets/main.min.js', array(), '1.1', true);
+	wp_localize_script('gulp-script', 'REST_API_data', array(
+		'root'  => esc_url_raw(rest_url()),
+		'nonce' => wp_create_nonce('wp_rest')
+	));
 }
 // Добавить скрипты и стили на сайт
 add_action('wp_enqueue_scripts', 'gulp_scripts');
@@ -65,7 +69,6 @@ function add_custom_taxonomies()
 		'show_in_nav_menus' => true,
 		'rewrite'      => ['slug' => 'courses-ages']
 	]);
-
 }
 add_action('init', 'add_custom_taxonomies');
 
@@ -214,6 +217,34 @@ function my_custom_post_projects()
 }
 add_action('init', 'my_custom_post_projects');
 
+// Docoments
+function my_custom_post_contract()
+{
+	$labels = [
+		'name'               => 'Договоры',
+		'singular_name'      => 'Договоры',
+		'add_new'            => 'Добавить договор',
+		'add_new_item'       => 'Добавить',
+		'edit_item'          => 'Редактировать',
+		'new_item'           => 'Новый договор',
+		'all_items'          => 'Все договора',
+		'view_item'          => 'Посмотреть',
+		'search_items'       => 'Искать',
+		'not_found'          => 'Договор не найден',
+		'not_found_in_trash' => 'Договор не найден',
+		'parent_item_colon'  => '',
+		'menu_name'          => 'Список договоров'
+	];
+	$args = [
+		'labels'        => $labels,
+		'public'        => true,
+		'rewrite'       => ['slug' => 'contract'],
+		'supports'      => ['title', 'editor'],
+		'has_archive'   => true
+	];
+	register_post_type('contract', $args);
+}
+add_action('init', 'my_custom_post_contract');
 
 add_action('after_setup_theme', function () {
 	register_nav_menus([
@@ -222,7 +253,7 @@ add_action('after_setup_theme', function () {
 	]);
 });
 
-add_theme_support( 'post-thumbnails', [ 'post' ] );
+add_theme_support('post-thumbnails', ['post']);
 
 
 

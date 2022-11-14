@@ -147,6 +147,31 @@ add_action('rest_api_init', function () {
 		'callback' => 'art_page_projects_post',
 		'permission_callback' => '__return_true'
 	]);
+
+	// Все договора + страница 1 договора
+	register_rest_route($prefix, 'page/contract', [
+		'methods' => 'GET',
+		'callback' => 'art_page_contract',
+		'permission_callback' => '__return_true'
+	]);
+	register_rest_route($prefix, 'page/contract/(?P<slug>[a-zA-Z0-9-]+)', [
+		'methods' => 'GET',
+		'callback' => 'art_page_contract_post',
+		'permission_callback' => '__return_true'
+	]);
+
+	// Политика конфиденциальности 
+	register_rest_route($prefix, 'page/privacy-policy', [
+		'methods' => 'GET',
+		'callback' => 'art_page_privacy_policy',
+		'permission_callback' => '__return_true'
+	]);
+	// Пользовательское соглашение 
+	register_rest_route($prefix, 'page/user-agreement', [
+		'methods' => 'GET',
+		'callback' => 'art_page_user_agreement',
+		'permission_callback' => '__return_true'
+	]);
 });
 
 // Для сортировки многомерных массивов по ключу
@@ -155,6 +180,96 @@ function build_sorter($key)
 	return function ($a, $b) use ($key) {
 		return strnatcmp($a[$key], $b[$key]);
 	};
+}
+
+function art_page_user_agreement()
+{
+	$data = [];
+	$my_page = get_page_by_path('polzovatelskoe-soglashenie', OBJECT, 'page');
+
+	if ($my_page) {
+		$id_page = $my_page->ID;
+		$post = get_post($id_page);
+
+		$content = $post->post_content;
+		$content = apply_filters('the_content', $content);
+		$content = str_replace(']]>', ']]&gt;', $content);
+
+		$data['id'] = $id_page;
+		$data['title'] = $post->post_title;
+		$data['slug'] = $post->post_name;
+		$data['content'] = $content;
+	}
+
+	return $data;
+}
+
+function art_page_privacy_policy()
+{
+	$data = [];
+	$my_page = get_page_by_path('privacy-policy', OBJECT, 'page');
+
+	if ($my_page) {
+		$id_page = $my_page->ID;
+		$post = get_post($id_page);
+
+		$content = $post->post_content;
+		$content = apply_filters('the_content', $content);
+		$content = str_replace(']]>', ']]&gt;', $content);
+
+		$data['id'] = $id_page;
+		$data['title'] = $post->post_title;
+		$data['slug'] = $post->post_name;
+		$data['content'] = $content;
+	}
+
+
+	return $data;
+}
+
+function art_page_contract_post($slug)
+{
+	$data = [];
+	$args = [
+		'post_type' => 'contract',
+		'name' 	=> $slug['slug'],
+	];
+	$post = get_posts($args);
+	$id = $post[0]->ID;
+
+	$content = $post[0]->post_content;
+	$content = apply_filters('the_content', $content);
+	$content = str_replace(']]>', ']]&gt;', $content);
+
+	$data['id'] = $id;
+	$data['title'] = $post[0]->post_title;
+	$data['slug'] = $post[0]->post_name;
+	$data['content'] = $content;
+
+	return $data;
+}
+
+function art_page_contract()
+{
+	$data = [];
+	$args = [
+		'post_type' => 'contract',
+		'numberposts' 	=> -1,
+	];
+	$contract = get_posts($args);
+	$i = 0;
+	if ($contract) {
+		foreach ($contract as $post) {
+			$id = $post->ID;
+			// Added to api
+			$data[$i]['id'] = $id;
+			$data[$i]['title'] = $post->post_title;
+			$data[$i]['slug'] = $post->post_name;
+
+			$i++;
+		}
+	}
+	return $data;
 }
 
 function art_page_projects()
@@ -180,12 +295,14 @@ function art_page_projects()
 		if ($projects) {
 			foreach ($projects as $post) {
 				$id = $post->ID;
-				$description = get_field('zagolovok_dlya_anonsa', $id) ? get_field('zagolovok_dlya_anonsa', $id) : null;
-				$img = get_field('izobrazhenie_dlya_anonsa', $id) ? get_field('izobrazhenie_dlya_anonsa', $id) : null;
+				$description = get_field('zagolovok_dlya_anonsa', $id);
+				$img = get_field('izobrazhenie_dlya_anonsa', $id);
+				$type_project = get_field('span_dlya_anonsa', $id);
 
 				// Added to api
 				$data_projects[$i]['id'] = $id;
 				$data_projects[$i]['title'] = $post->post_title;
+				$data_projects[$i]['type_project'] = $type_project;
 				$data_projects[$i]['description'] = $description;
 				$data_projects[$i]['slug'] = $post->post_name;
 				$data_projects[$i]['img'] = $img ? ['url' => $img['url'], 'alt' => $img['title']] : null;
@@ -205,6 +322,7 @@ function art_page_projects()
 				[
 					'id' => $id_issled,
 					'title' => $post_issled->post_title,
+					'type_project' => '*на основании опроса на сайте hh.ru',
 					'description' => $description_issled,
 					'slug' => $post_issled->post_name,
 					'img' => $img_issled ? ['url' => $img_issled['url'], 'alt' => $img_issled['title']] : null
@@ -319,7 +437,7 @@ function art_page_projects_post($slug)
 			];
 
 			$img_10 = get_field('izobrazhenie-10', $id_page);
-			$img_11 = get_field('izobrazhenie-9', $id_page);
+			$img_11 = get_field('izobrazhenie-11', $id_page);
 			$skills_assessment = [
 				'title' => get_field('title-isl-10', $id_page),
 				'description' => get_field('subtitle-isl-10-1', $id_page),
@@ -427,8 +545,8 @@ function art_page_projects_post($slug)
 			$img_30 = get_field('izobrazhenie-29_2', $id_page);
 			$img_31 = get_field('izobrazhenie-29_3', $id_page);
 			$teenager_at_work = [
-				'title' => get_field('title-isl-21', $id_page),
-				'description' => get_field('subtitle-isl-21', $id_page),
+				'title' => get_field('title-isl-29', $id_page),
+				'description' => get_field('description-isl-29', $id_page),
 				'img1' => ['url' => $img_29['url'], 'alt' => $img_29['title']],
 				'img2' => ['url' => $img_30['url'], 'alt' => $img_30['title']],
 				'img3' => ['url' => $img_31['url'], 'alt' => $img_31['title']],
@@ -483,8 +601,9 @@ function art_page_projects_post($slug)
 			'name' 	=> $slug['slug'],
 		];
 		$post = get_posts($args);
-		$id = $post[0]->ID;
-		if ($id) {
+
+		if ($post) {
+			$id = $post[0]->ID;
 			$content = $post[0]->post_content;
 			$content = apply_filters('the_content', $content);
 			$content = str_replace(']]>', ']]&gt;', $content);
@@ -978,7 +1097,7 @@ function art_page_about()
 			}
 		}
 		$list_successes_array = get_field('spisok_pobed', $id_page);
-		$our_successes = [];
+		$our_successes_array = [];
 		if ($list_successes_array) {
 			foreach ($list_successes_array as $item) {
 				$successes = $item['opisanie_uspehi'];
@@ -989,13 +1108,17 @@ function art_page_about()
 						$list_successes[] = $item2['nazvanie'];
 					}
 				}
-				$our_successes[] = [
+				$our_successes_array[] = [
 					'title' => $item['zagolovok_uspehi'],
 					'list_successes' => $list_successes,
 					'img' => ['url' => $img['url'], 'alt' => $img['title']]
 				];
 			}
 		}
+		$our_successes = [
+			'title' => get_field('title_about', $id_page),
+			'our_successes_array' => $our_successes_array,
+		];
 		$data['id_page'] = $id_page;
 		$data['content'] = $content;
 		$data['banner'] = ['url' => $banner['url'], 'alt' => $banner['title']];
@@ -1122,9 +1245,11 @@ function art_page_offline_test()
 				}
 			}
 			$img_steps_form = get_field('izobrazhenie_zayavka', $id_page_proff);
+			$link_to_oferta = get_field('link_to_oferta', $id_page_proff);
 			$step_form['steps_form_title'] = get_field('zagolovok_zayavka', $id_page_proff);
 			$step_form['steps_form_items'] = $steps_form_items;
 			$step_form['img_steps_form'] = ['url' => $img_steps_form['url'], 'alt' => $img_steps_form['title']];
+			$step_form['link_to_oferta'] = $link_to_oferta;
 		}
 
 		$data['id_page'] = $id_page;
@@ -1260,9 +1385,11 @@ function art_page_online_test()
 				}
 			}
 			$img_steps_form = get_field('izobrazhenie_zayavka', $id_page_proff);
+			$link_to_oferta = get_field('link_to_oferta', $id_page_proff);
 			$step_form['steps_form_title'] = get_field('zagolovok_zayavka', $id_page_proff);
 			$step_form['steps_form_items'] = $steps_form_items;
 			$step_form['img_steps_form'] = ['url' => $img_steps_form['url'], 'alt' => $img_steps_form['title']];
+			$step_form['link_to_oferta'] = $link_to_oferta;
 		}
 
 		$data['id_page'] = $id_page;
@@ -1336,9 +1463,12 @@ function art_page_proftestirovanie()
 		}
 
 		$img_steps_form = get_field('izobrazhenie_zayavka', $id_page);
+		$link_to_oferta = get_field('link_to_oferta', $id_page);
 		$step_form['steps_form_title'] = get_field('zagolovok_zayavka', $id_page);
 		$step_form['steps_form_items'] = $steps_form_items;
 		$step_form['img_steps_form'] = ['url' => $img_steps_form['url'], 'alt' => $img_steps_form['title']];
+		$step_form['link_to_oferta'] = $link_to_oferta;
+
 		$id_page_online = get_page_by_path('proftestirovanie/online-test', OBJECT, 'page')->ID;
 		$id_page_ofline = get_page_by_path('proftestirovanie/offline-test', OBJECT, 'page')->ID;
 
@@ -1391,6 +1521,8 @@ function art_page_proftestirovanie()
 				$reviews[] = $review;
 			}
 		}
+
+		
 
 
 		$data['id_page'] = $id_page;
@@ -1960,6 +2092,7 @@ function art_page_skills()
 			}
 		}
 		$request_img = ['url' => get_field('izobrazhenie_razdel_lagerya', $id_page)['url'], 'alt' => get_field('izobrazhenie_razdel_lagerya', $id_page)['title']];
+		$request_link_to_oferta  = get_field('link_to_oferta', $id_page);
 
 		$past_shifts = [];
 		$args = [
@@ -2129,6 +2262,7 @@ function art_page_skills()
 		$data['request_title'] = $request_title;
 		$data['request'] = $request;
 		$data['request_img'] = $request_img;
+		$data['link_to_oferta'] = $request_link_to_oferta;
 
 		$data['past_shifts'] = $past_shifts;
 	}
@@ -2226,6 +2360,7 @@ function art_page_professions()
 		}
 
 		$request_img = ['url' => get_field('izobrazhenie_razdel_lagerya', $id_page)['url'], 'alt' => get_field('izobrazhenie_razdel_lagerya', $id_page)['title']];
+		$request_link_to_oferta  = get_field('link_to_oferta', $id_page);
 
 		$past_shifts = [];
 		$args = [
@@ -2288,6 +2423,8 @@ function art_page_professions()
 		$data['request_title'] = $request_title;
 		$data['request'] = $request;
 		$data['request_img'] = $request_img;
+		$data['link_to_oferta'] = $request_link_to_oferta;
+		
 
 		$data['past_shifts'] = $past_shifts;
 	}
@@ -2389,6 +2526,7 @@ function art_page_tourist_holidays()
 		}
 
 		$request_img = ['url' => get_field('izobrazhenie_razdel_lagerya', $id_page)['url'], 'alt' => get_field('izobrazhenie_razdel_lagerya', $id_page)['title']];
+		$request_link_to_oferta  = get_field('link_to_oferta', $id_page);
 
 		$past_shifts = [];
 		$args = [
@@ -2451,6 +2589,7 @@ function art_page_tourist_holidays()
 		$data['request_title'] = $request_title;
 		$data['request'] = $request;
 		$data['request_img'] = $request_img;
+		$data['link_to_oferta'] = $request_link_to_oferta;
 
 		$data['past_shifts'] = $past_shifts;
 	}
@@ -3047,6 +3186,7 @@ function art_page_psychologist()
 			}
 		}
 		$img_steps_form = get_field('bg-form-psychologist', $id_page);
+		$link_to_oferta = get_field('link_to_oferta', $id_page);
 
 		$data['id_page'] = $id_page;
 		$data['content'] = $content;
@@ -3062,6 +3202,7 @@ function art_page_psychologist()
 		$data['steps_form_title'] = $steps_form_title;
 		$data['steps_form_items'] = $steps_form_items;
 		$data['img_steps_form'] = ['url' => $img_steps_form['url'], 'alt' => $img_steps_form['title']];
+		$data['link_to_oferta'] = $link_to_oferta;
 	}
 
 	return $data;

@@ -31,6 +31,20 @@ var deltaY = null
 
 	});
 
+	jQuery.ajax( {
+		url        : REST_API_data.root + 'contact-form-7/v1/contact-forms',
+		method     : 'POST',
+		beforeSend : function ( xhr ) {
+			xhr.setRequestHeader( 'X-WP-Nonce', REST_API_data.nonce );
+		},
+		data       : {
+			'title' : 'Новый заголовок'
+		}
+	} )
+	.done( function ( response ) {
+		console.log( response );
+	} );
+
 
 
 	// console.log(rew)
