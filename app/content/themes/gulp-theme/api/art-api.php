@@ -172,6 +172,13 @@ add_action('rest_api_init', function () {
 		'callback' => 'art_page_user_agreement',
 		'permission_callback' => '__return_true'
 	]);
+
+	// Базовые настройки 
+	register_rest_route($prefix, 'base-setting', [
+		'methods' => 'GET',
+		'callback' => 'art_base_setting',
+		'permission_callback' => '__return_true'
+	]);
 });
 
 // Для сортировки многомерных массивов по ключу
@@ -180,6 +187,17 @@ function build_sorter($key)
 	return function ($a, $b) use ($key) {
 		return strnatcmp($a[$key], $b[$key]);
 	};
+}
+
+function art_base_setting()
+{
+	$data = [];
+
+	$sendmail_url = 'https://' . $_SERVER['HTTP_HOST'] . '/sendmail.php';
+
+	$data['sendmail_url'] = $sendmail_url;
+
+	return $data;
 }
 
 function art_page_user_agreement()

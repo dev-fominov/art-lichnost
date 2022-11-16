@@ -29,4 +29,11 @@ echo phpversion();
 
 <div class="root"></div>
 
+<form action="" id="ajaxform">
+	<input type="text" name="text_name" class="_req">
+	<button class="ajaxsend ">Send</button>
+</form>
+
+<div class="_sending">Загрузка...</div>
+
 <?php get_footer(); ?>
