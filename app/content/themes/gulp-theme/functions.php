@@ -255,7 +255,28 @@ add_action('after_setup_theme', function () {
 
 add_theme_support('post-thumbnails', ['post']);
 
-
+add_action('admin_menu', 'remove_some_menus', 999);
+function remove_some_menus()
+{
+	// 1. Добавляете строки скрытия пунктов меню для всех
+	if (!current_user_can('manage_options')) {
+		// 2. Здесь будут вызовы для роли редактора и ниже (но не админа)
+		remove_menu_page("index.php");                # Консоль
+		remove_menu_page("edit.php");                 # Записи
+		remove_menu_page("edit-comments.php");        # Комментарии
+		remove_menu_page("edit.php?post_type=page");  # Страницы
+		remove_menu_page("upload.php");               # Медиафайлы
+		remove_menu_page("themes.php");               # Внешний вид
+		remove_menu_page("plugins.php");              # Плагины
+		remove_menu_page("users.php");                # Пользователи
+		remove_menu_page("tools.php");                # Инструменты
+		remove_menu_page("options-general.php");      # Параметры
+		remove_menu_page("edit.php?post_type=acf-field-group"); # ACF
+	}
+	// if ( ! current_user_can('delete_others_posts') ) {
+	//     // 3. Условие для авторов и ниже, но не редакторов и админов
+	// }
+}
 
 
 

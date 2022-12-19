@@ -174,12 +174,19 @@ add_action('rest_api_init', function () {
 	]);
 
 	// Базовые настройки 
-	register_rest_route($prefix, 'base-setting', [
+	register_rest_route($prefix, 'camp-changes', [
 		'methods' => 'GET',
-		'callback' => 'art_base_setting',
+		'callback' => 'art_camp_changes',
+		'permission_callback' => '__return_true'
+	]);
+
+	register_rest_route($prefix, 'send-mail', [
+		'methods' => 'POST',
+		'callback' => 'art_sendmail',
 		'permission_callback' => '__return_true'
 	]);
 });
+
 
 // Для сортировки многомерных массивов по ключу
 function build_sorter($key)
@@ -189,13 +196,210 @@ function build_sorter($key)
 	};
 }
 
-function art_base_setting()
+// function art_sendmail($params)
+// {
+// 	$data = [];
+
+// 	$parentsName = $params->get_param('parentsName');
+// 	$childName = $params->get_param('childName');
+// 	$birthdate = $params->get_param('birthdate');
+// 	$userEmail = $params->get_param('userEmail');
+// 	$userPhone = $params->get_param('userPhone');
+// 	$hiddenText = $params->get_param('hiddenText');
+// 	$themeMessage = $params->get_param('themeMessage');
+
+// 	// if ($parentsName) {
+// 		$mail = new PHPMailer(true);
+// 		$mail->CharSet = 'UTF-8';
+// 		$mail->setLanguage('ru', 'phpmailer/language/');
+// 		$mail->isHTML(true);
+
+// 		//Server settings
+// 		$mail->SMTPDebug = SMTP::DEBUG_SERVER;                      //Включить подробный вывод отладки
+// 		$mail->isSMTP();                                            //Отправка с помощью SMTP
+// 		$mail->Host       = 'smtp.yandex.ru';                       //Установите SMTP-сервер для отправки через
+// 		$mail->SMTPAuth   = true;                                   //Включить аутентификацию SMTP
+// 		$mail->Username   = 'alexvolkov72305@yandex.ru';                     //SMTP username
+// 		$mail->Password   = 'jbffztbuhbcbrhym';                               //SMTP password
+// 		$mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;            //Включить неявное шифрование TLS
+// 		$mail->Port       = 465;                                    //TCP-порт для подключения; используйте 587, если вы установили `SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS`.
+
+// 		//Получатели
+// 		// От кого
+// 		$mail->setFrom('alexvolkov72305@yandex.ru', 'art-lichnost');
+// 		// $mail->addAddress('joe@example.net', 'Joe User');     //Добавить получателя
+// 		$mail->addAddress('mail@alex-volkov.ru');               //Имя необязательно
+// 		$mail->addReplyTo('info@art-lichnost.ru', 'art-lichnost');
+// 		// $mail->addCC('cc@example.com');
+// 		// $mail->addBCC('bcc@example.com');
+
+// 		//Вложения
+// 		// $mail->addAttachment('/var/tmp/file.tar.gz');         //Добавить вложения
+// 		// $mail->addAttachment('/tmp/image.jpg', 'new.jpg');    //Optional name
+
+// 		$body = '<h1>Информация о пользователе</h1>';
+
+// 		if ($parentsName) {
+// 			$body .= '<p><strong>Фамилия и имя родителя: </strong>' . $parentsName . '</p>';
+// 		}
+// 		if ($childName) {
+// 			$body .= '<p><strong>Фамилия и имя ребенка: </strong>' . $childName . '</p>';
+// 		}
+// 		if ($birthdate) {
+// 			$body .= '<p><strong>Дата рождения ребенка: </strong>' . $birthdate . '</p>';
+// 		}
+// 		if ($userEmail) {
+// 			$body .= '<p><strong>E-mail: </strong>' . $userEmail . '</p>';
+// 		}
+// 		if ($userPhone) {
+// 			$body .= '<p><strong>Телефон: </strong>' . $userPhone . '</p>';
+// 		}
+// 		if ($hiddenText) {
+// 			$body .= '<p><strong>Какая форма: </strong>' . $hiddenText . '</p>';
+// 		}
+// 		if ($themeMessage) {
+// 			$subject = $themeMessage;
+// 		} else {
+// 			$subject = 'Заявка с сайта';
+// 		}
+
+// 		//Контент
+// 		$mail->isHTML(true);                                  //Установите формат электронной почты на HTML
+// 		$mail->Subject = $subject;
+// 		$mail->Body    = $body;
+// 		$mail->AltBody = 'Ваш почтовый клиент не поддерживает HTML';
+
+// 		if (!$mail->send()) {
+// 			$message = 'Ошибка';
+// 		} else {
+// 			$message = 'Данные отправлены!';
+// 		}
+
+// 		$response = ['message' => $message];
+
+		
+		
+
+// 		$data['response'] = json_encode($response);
+// 	// }
+
+// 	return $data;
+// }
+
+
+function art_camp_changes($params)
 {
 	$data = [];
 
-	$sendmail_url = 'https://' . $_SERVER['HTTP_HOST'] . '/sendmail.php';
+	$terms = $params->get_param('camp');
+	$campChange = $params->get_param('slug');
+	$campChange = str_replace('/', '', $campChange);
 
-	$data['sendmail_url'] = $sendmail_url;
+	$args_shift = [
+		'post_type' => 'camp',
+		'numberposts' 	=> -1,
+		'tax_query' => [[
+			'taxonomy' => 'camp-section',
+			'field'    => 'slug',
+			'terms'    => $terms
+		]],
+	];
+
+	$posts_shift = query_posts($args_shift);
+
+	if ($posts_shift) {
+
+		foreach ($posts_shift as $post) {
+
+			if ($post->post_name == $campChange) {
+				$id = $post->ID;
+				$card_profstart_array = get_field('profstart_cards', $id);
+				$card_profstart = [];
+				if ($card_profstart_array) {
+					foreach ($card_profstart_array as $item) {
+						$img_shift = $item['image_card'];
+
+						$course_ages = $item['vozrast'];
+						$period_ages = [];
+						$name_ages = [];
+						if ($course_ages) {
+							$pattern = '/[^0-9]/';
+
+							foreach ($course_ages as $item12) {
+								$name_ages[] = (int)preg_replace($pattern, "", $item12->name);
+							}
+							$period_ages = min($name_ages) . '-' . max($name_ages) . ' лет';
+						}
+
+						$card_profstart[] = [
+							'title' => $item['title_card'],
+							'period' => get_field('period', $id),
+							'location' => get_field('location', $id),
+							'ages' => $name_ages,
+							'description' => $item['description_card'],
+							'seats' => $item['nalichie_mest_card'],
+							'price' => get_field('change_price', $id),
+							'price_certificate' => get_field('price_per_certificate', $id),
+							'thumbnail_url' => ['url' => $img_shift['url'], 'alt' => $img_shift['title']],
+							'age_title' => $period_ages,
+						];
+					}
+				}
+
+				$card_profi_array = get_field('profi_cards', $id);
+				$card_profi = [];
+				if ($card_profi_array) {
+
+					foreach ($card_profi_array as $item) {
+						$img_shift = $item['image_card'];
+
+						$course_ages = $item['vozrast'];
+						$period_ages = [];
+						$name_ages = [];
+						if ($course_ages) {
+							$pattern = '/[^0-9]/';
+							foreach ($course_ages as $item12) {
+								$name_ages[] = (int)preg_replace($pattern, "", $item12->name);
+							}
+							$period_ages = min($name_ages) . '-' . max($name_ages) . ' лет';
+						}
+
+						$card_profi[] = [
+							'title' => $item['title_card'],
+							'period' => get_field('period', $id),
+							'location' => get_field('location', $id),
+							'ages' => $name_ages,
+							'description' => $item['description_card'],
+							'seats' => $item['nalichie_mest_card'],
+							'price' => get_field('change_price', $id),
+							'price_certificate' => get_field('price_per_certificate', $id),
+							'thumbnail_url' => ['url' => $img_shift['url'], 'alt' => $img_shift['title']],
+							'age_title' => $period_ages,
+						];
+					}
+				}
+
+				$profi_array = [
+					'description' => get_field('description_box_profi', $id),
+					'card' => $card_profi
+				];
+				$profstart_array = [
+					'description' => get_field('description_box_profstart', $id),
+					'card' => $card_profstart
+				];
+
+				// Added to api
+				$data['id'] = $id;
+				$data['title'] = $post->post_title;
+				$data['slug'] = $post->post_name;
+				$data['price'] = get_field('change_price', $id);
+				$data['price_certificate'] = get_field('price_per_certificate', $id);
+				$data['no_certificate'] = get_field('text_without_action', $id);
+				$data['profi'] = $profi_array;
+				$data['profstart'] = $profstart_array;
+			}
+		}
+	}
 
 	return $data;
 }
@@ -217,6 +421,15 @@ function art_page_user_agreement()
 		$data['title'] = $post->post_title;
 		$data['slug'] = $post->post_name;
 		$data['content'] = $content;
+
+		$metadata = [
+			'title' => get_field('title_meta', $id_page),
+			'description' => get_field('description_meta', $id_page),
+			'keywords' => get_field('keywords_meta', $id_page),
+			'image' => get_field('img_meta', $id_page),
+		];
+
+		$data['metadata'] = $metadata;
 	}
 
 	return $data;
@@ -239,6 +452,15 @@ function art_page_privacy_policy()
 		$data['title'] = $post->post_title;
 		$data['slug'] = $post->post_name;
 		$data['content'] = $content;
+
+		$metadata = [
+			'title' => get_field('title_meta', $id_page),
+			'description' => get_field('description_meta', $id_page),
+			'keywords' => get_field('keywords_meta', $id_page),
+			'image' => get_field('img_meta', $id_page),
+		];
+
+		$data['metadata'] = $metadata;
 	}
 
 
@@ -264,6 +486,15 @@ function art_page_contract_post($slug)
 	$data['slug'] = $post[0]->post_name;
 	$data['content'] = $content;
 
+	$metadata = [
+		'title' => get_field('title_meta', $id),
+		'description' => get_field('description_meta', $id),
+		'keywords' => get_field('keywords_meta', $id),
+		'image' => get_field('img_meta', $id),
+	];
+
+	$data['metadata'] = $metadata;
+
 	return $data;
 }
 
@@ -287,6 +518,7 @@ function art_page_contract()
 			$i++;
 		}
 	}
+
 	return $data;
 }
 
@@ -354,6 +586,15 @@ function art_page_projects()
 		$data['banner'] = $banner ? ['url' => $banner['url'], 'alt' => $banner['title']] : null;
 		$data['id_video'] = $id_video;
 		$data['projects'] = $all_projects;
+
+		$metadata = [
+			'title' => get_field('title_meta', $id_page),
+			'description' => get_field('description_meta', $id_page),
+			'keywords' => get_field('keywords_meta', $id_page),
+			'image' => get_field('img_meta', $id_page),
+		];
+
+		$data['metadata'] = $metadata;
 	}
 
 	return $data;
@@ -612,6 +853,15 @@ function art_page_projects_post($slug)
 			$data['teenager_at_work'] = $teenager_at_work;
 			$data['employment_benefits'] = $employment_benefits;
 			$data['employment_disadvantages'] = $employment_disadvantages;
+
+			$metadata = [
+				'title' => get_field('title_meta', $id_page),
+				'description' => get_field('description_meta', $id_page),
+				'keywords' => get_field('keywords_meta', $id_page),
+				'image' => get_field('img_meta', $id_page),
+			];
+
+			$data['metadata'] = $metadata;
 		}
 	} else {
 		$args = [
@@ -707,6 +957,15 @@ function art_page_projects_post($slug)
 			$data['history'] = $history;
 			$data['what_convention'] = $what_convention;
 			$data['what_do'] = $what_do;
+
+			$metadata = [
+				'title' => get_field('title_meta', $id),
+				'description' => get_field('description_meta', $id),
+				'keywords' => get_field('keywords_meta', $id),
+				'image' => get_field('img_meta', $id),
+			];
+
+			$data['metadata'] = $metadata;
 		}
 	}
 
@@ -777,6 +1036,15 @@ function art_page_vacancies()
 		$data['id_video'] = $id_video;
 		$data['vacancies'] = $data_vacancies;
 		$data['no_vacancies'] = $novacancies;
+
+		$metadata = [
+			'title' => get_field('title_meta', $id_page),
+			'description' => get_field('description_meta', $id_page),
+			'keywords' => get_field('keywords_meta', $id_page),
+			'image' => get_field('img_meta', $id_page),
+		];
+
+		$data['metadata'] = $metadata;
 	}
 
 	return $data;
@@ -876,6 +1144,15 @@ function art_page_vacancies_post($slug)
 		$data['second_block'] = $second_block;
 		$data['third_block'] = $third_block;
 		$data['send_resume'] = $send_resume;
+
+		$metadata = [
+			'title' => get_field('title_meta', $id),
+			'description' => get_field('description_meta', $id),
+			'keywords' => get_field('keywords_meta', $id),
+			'image' => get_field('img_meta', $id),
+		];
+
+		$data['metadata'] = $metadata;
 	} else {
 		$data['error'] = '404';
 	}
@@ -1047,6 +1324,15 @@ function art_page_team()
 		$data['team_counselors'] = $team_counselors;
 		$data['team_leaders'] = $team_leaders;
 		$data['part_team'] = $part_team;
+
+		$metadata = [
+			'title' => get_field('title_meta', $id_page),
+			'description' => get_field('description_meta', $id_page),
+			'keywords' => get_field('keywords_meta', $id_page),
+			'image' => get_field('img_meta', $id_page),
+		];
+
+		$data['metadata'] = $metadata;
 	}
 
 	return $data;
@@ -1147,6 +1433,15 @@ function art_page_about()
 		$data['our_targets'] = $our_targets;
 		$data['our_awards'] = $our_awards;
 		$data['our_successes'] = $our_successes;
+
+		$metadata = [
+			'title' => get_field('title_meta', $id_page),
+			'description' => get_field('description_meta', $id_page),
+			'keywords' => get_field('keywords_meta', $id_page),
+			'image' => get_field('img_meta', $id_page),
+		];
+
+		$data['metadata'] = $metadata;
 	}
 
 	return $data;
@@ -1282,6 +1577,15 @@ function art_page_offline_test()
 		$data['consultants'] = $consultants;
 		$data['faq'] = $faq;
 		$data['step_form'] = $step_form;
+
+		$metadata = [
+			'title' => get_field('title_meta', $id_page),
+			'description' => get_field('description_meta', $id_page),
+			'keywords' => get_field('keywords_meta', $id_page),
+			'image' => get_field('img_meta', $id_page),
+		];
+
+		$data['metadata'] = $metadata;
 	}
 
 	return $data;
@@ -1422,6 +1726,15 @@ function art_page_online_test()
 		$data['consultants'] = $consultants;
 		$data['faq'] = $faq;
 		$data['step_form'] = $step_form;
+
+		$metadata = [
+			'title' => get_field('title_meta', $id_page),
+			'description' => get_field('description_meta', $id_page),
+			'keywords' => get_field('keywords_meta', $id_page),
+			'image' => get_field('img_meta', $id_page),
+		];
+
+		$data['metadata'] = $metadata;
 	}
 
 	return $data;
@@ -1540,7 +1853,7 @@ function art_page_proftestirovanie()
 			}
 		}
 
-		
+
 
 
 		$data['id_page'] = $id_page;
@@ -1555,6 +1868,15 @@ function art_page_proftestirovanie()
 		$data['reviews'] = $reviews;
 
 		$data['step_form'] = $step_form;
+
+		$metadata = [
+			'title' => get_field('title_meta', $id_page),
+			'description' => get_field('description_meta', $id_page),
+			'keywords' => get_field('keywords_meta', $id_page),
+			'image' => get_field('img_meta', $id_page),
+		];
+
+		$data['metadata'] = $metadata;
 	}
 
 
@@ -1750,6 +2072,15 @@ function art_page_courses_post($slug)
 		$data['what_we_do'] = $what_we_do;
 		$data['educator'] = $educator;
 		$data['step_form'] = $step_form;
+
+		$metadata = [
+			'title' => get_field('title_meta', $id_page),
+			'description' => get_field('description_meta', $id_page),
+			'keywords' => get_field('keywords_meta', $id_page),
+			'image' => get_field('img_meta', $id_page),
+		];
+
+		$data['metadata'] = $metadata;
 	}
 
 	return $data;
@@ -1947,6 +2278,15 @@ function art_page_courses()
 		$data['review'] = $review;
 		$data['about_courses'] = $about_courses;
 		$data['step_form'] = $step_form;
+
+		$metadata = [
+			'title' => get_field('title_meta', $id_page),
+			'description' => get_field('description_meta', $id_page),
+			'keywords' => get_field('keywords_meta', $id_page),
+			'image' => get_field('img_meta', $id_page),
+		];
+
+		$data['metadata'] = $metadata;
 	}
 
 	return $data;
@@ -2014,6 +2354,15 @@ function art_page_merch()
 		$data['title'] = $title;
 		$data['description'] = $description;
 		$data['merch'] = $merch;
+
+		$metadata = [
+			'title' => get_field('title_meta', $id_page),
+			'description' => get_field('description_meta', $id_page),
+			'keywords' => get_field('keywords_meta', $id_page),
+			'image' => get_field('img_meta', $id_page),
+		];
+
+		$data['metadata'] = $metadata;
 	}
 
 	return $data;
@@ -2111,7 +2460,10 @@ function art_page_skills()
 		}
 		$request_img = ['url' => get_field('izobrazhenie_razdel_lagerya', $id_page)['url'], 'alt' => get_field('izobrazhenie_razdel_lagerya', $id_page)['title']];
 		$request_link_to_oferta  = get_field('link_to_oferta', $id_page);
-
+		if (is_string($request_link_to_oferta)) {
+			$request_link_to_oferta2 = explode('contract', $request_link_to_oferta)[1];
+			$request_link_to_oferta = str_replace('/', '', $request_link_to_oferta2);
+		}
 		$past_shifts = [];
 		$args = [
 			'post_type' => 'camp',
@@ -2148,6 +2500,285 @@ function art_page_skills()
 				'taxonomy' => 'camp-section',
 				'field'    => 'slug',
 				'terms'    => 'skills'
+			]],
+		];
+
+		$posts_shift = query_posts($args_shift);
+		if ($posts_shift) {
+			$i = 0;
+
+			foreach ($posts_shift as $post) {
+				$id = $post->ID;
+				$card_profstart_array = get_field('profstart_cards', $id);
+				$card_profstart = [];
+				if ($card_profstart_array) {
+					foreach ($card_profstart_array as $item) {
+						$img_shift = $item['image_card'];
+
+						$course_ages = $item['vozrast'];
+						$period_ages = [];
+						$name_ages = [];
+						if ($course_ages) {
+							$pattern = '/[^0-9]/';
+
+							foreach ($course_ages as $item12) {
+								$name_ages[] = (int)preg_replace($pattern, "", $item12->name);
+							}
+							$period_ages = min($name_ages) . '-' . max($name_ages) . ' лет';
+						}
+
+						$card_profstart[] = [
+							'title' => $item['title_card'],
+							'period' => get_field('period', $id),
+							'location' => get_field('location', $id),
+							'ages' => $name_ages,
+							'description' => $item['description_card'],
+							'seats' => $item['nalichie_mest_card'],
+							'price' => get_field('change_price', $id),
+							'price_certificate' => get_field('price_per_certificate', $id),
+							'thumbnail_url' => ['url' => $img_shift['url'], 'alt' => $img_shift['title']],
+							'age_title' => $period_ages,
+						];
+					}
+				}
+
+				$card_profi_array = get_field('profi_cards', $id);
+				$card_profi = [];
+				if ($card_profi_array) {
+
+					foreach ($card_profi_array as $item) {
+						$img_shift = $item['image_card'];
+
+						$course_ages = $item['vozrast'];
+						$period_ages = [];
+						$name_ages = [];
+						if ($course_ages) {
+							$pattern = '/[^0-9]/';
+							foreach ($course_ages as $item12) {
+								$name_ages[] = (int)preg_replace($pattern, "", $item12->name);
+							}
+							$period_ages = min($name_ages) . '-' . max($name_ages) . ' лет';
+						}
+
+						$card_profi[] = [
+							'title' => $item['title_card'],
+							'period' => get_field('period', $id),
+							'location' => get_field('location', $id),
+							'ages' => $name_ages,
+							'description' => $item['description_card'],
+							'seats' => $item['nalichie_mest_card'],
+							'price' => get_field('change_price', $id),
+							'price_certificate' => get_field('price_per_certificate', $id),
+							'thumbnail_url' => ['url' => $img_shift['url'], 'alt' => $img_shift['title']],
+							'age_title' => $period_ages,
+						];
+					}
+				}
+
+				$profi_array = [
+					'description' => get_field('description_box_profi', $id),
+					'card' => $card_profi
+				];
+				$profstart_array = [
+					'description' => get_field('description_box_profstart', $id),
+					'card' => $card_profstart
+				];
+				// Added to api
+				$shift_selection[$i]['id'] = $id;
+				$shift_selection[$i]['title'] = $post->post_title;
+				$shift_selection[$i]['slug'] = $post->post_name;
+				$shift_selection[$i]['price'] = get_field('change_price', $id);
+				$shift_selection[$i]['price_certificate'] = get_field('price_per_certificate', $id);
+				$shift_selection[$i]['no_certificate'] = get_field('text_without_action', $id);
+				$shift_selection[$i]['profi'] = $profi_array;
+				$shift_selection[$i]['profstart'] = $profstart_array;
+
+				$i++;
+			}
+		}
+
+		$data['id_page'] = $my_page->term_id;
+		$data['background_img'] = $background_img;
+		$data['background_video'] = $background_video;
+		$data['content'] = $content;
+
+		$data['description_text'] = $content_description_section;
+		$data['description_img'] = $izobrazhenie;
+		$data['description_video'] = $id_video;
+
+		$data['shift_selection'] = $shift_selection;
+
+		$data['benefits_title'] = $benefits_title;
+		$data['benefits_parents'] = $benefits_parents;
+		$data['benefits_children'] = $benefits_children;
+
+		$data['prozhivanie_title'] = $mesta_prozhivaniya_title;
+		$data['prozhivanie_description'] = $mesta_prozhivaniya_description;
+		$data['mesta_prozhivaniya'] = $mesta_prozhivaniya;
+
+		$data['programm_title'] = $programm_title;
+		$data['programm'] = $programm;
+		$data['programm_img'] = $programm_img;
+
+		$data['daily_regime_title'] = $daily_regime_title;
+		$data['daily_regime'] = $daily_regime;
+
+		$data['includ_title'] = $includ_title;
+		$data['includ_content'] = $includ_content;
+
+		$data['faq'] = $faq;
+
+		$data['request_title'] = $request_title;
+		$data['request'] = $request;
+		$data['request_img'] = $request_img;
+		$data['link_to_oferta'] = $request_link_to_oferta;
+
+		$data['past_shifts'] = $past_shifts;
+
+		$metadata = [
+			'title' => get_field('title_meta', $id_page),
+			'description' => get_field('description_meta', $id_page),
+			'keywords' => get_field('keywords_meta', $id_page),
+			'image' => get_field('img_meta', $id_page),
+		];
+
+		$data['metadata'] = $metadata;
+	}
+
+	return $data;
+}
+
+function art_page_professions()
+{
+	$data = [];
+
+	$my_page = get_term_by('slug', 'professions', 'camp-section');
+	if ($my_page) {
+		$id_page = 'term_' . $my_page->term_id . '';
+
+		$background_img = ['url' => get_field('bac_img_section', $id_page)['url'], 'alt' => get_field('bac_img_section', $id_page)['title']];
+		$background_video = get_field('bac_video_section', $id_page);
+
+		$post = get_field('title-section', $id_page);
+		$content = apply_filters('the_content', $post);
+
+		$description_section = get_field('description_section', $id_page);
+		$content_description_section = apply_filters('the_content', $description_section);
+		$izobrazhenie = ['url' => get_field('izobrazhenie', $id_page)['url'], 'alt' => get_field('izobrazhenie', $id_page)['title']];
+		$id_video = get_field('id_video', $id_page);
+
+		$benefits_title = get_field('title_section_block', $id_page);
+		$array_benefits_parents = get_field('preimushhestva_dlya_roditelej', $id_page);
+		$array_benefits_children = get_field('preimushhestva_dlya_detok', $id_page);
+		$benefits_parents = [];
+		$benefits_children = [];
+		if ($array_benefits_parents) {
+			foreach ($array_benefits_parents as $item) {
+				$benefits_parents[] = $item['nazvanie'];
+			}
+		}
+		if ($array_benefits_children) {
+			foreach ($array_benefits_children as $item) {
+				$benefits_children[] = $item['nazvanie'];
+			}
+		}
+		$mesta_prozhivaniya_title = get_field('title_section_block_video', $id_page);
+		$mesta_prozhivaniya_description = get_field('description_section_block_video', $id_page);
+		$array_video_mesta_prozhivaniya = get_field('video_mesta_prozhivaniya', $id_page);
+		$mesta_prozhivaniya = [];
+		if ($array_video_mesta_prozhivaniya) {
+			foreach ($array_video_mesta_prozhivaniya as $item) {
+				$mesta_prozhivaniya[] = [
+					'title' => $item['zagolovok'],
+					'description' => $item['opisanie'],
+					'id_video' => $item['id_video'],
+					'oblozhka' => ['url' => $item['oblozhka']['url'], 'alt' => $item['oblozhka']['title']]
+				];
+			}
+		}
+		$programm_title = get_field('zagolovok_bloka_programm', $id_page);
+		$array_programm = get_field('opisanie_bloka_programm', $id_page);
+		$programm = [];
+		if ($array_programm) {
+			foreach ($array_programm as $item) {
+				$programm[] = $item['nazvanie'];
+			}
+		}
+
+		$programm_img = ['url' => get_field('izobrazhenie_programm', $id_page)['url'], 'alt' => get_field('izobrazhenie_programm', $id_page)['title']];
+
+		$daily_regime_title = get_field('zagolovok_bloka_rezim', $id_page);
+		$array_daily_regime = get_field('rasporyadok_dnya', $id_page);
+		$daily_regime = [];
+		if ($array_daily_regime) {
+			foreach ($array_daily_regime as $item) {
+				$daily_regime[] = $item['vremya_i_meropriyatie'];
+			}
+		}
+
+
+		$includ_title = get_field('zagolovok_bloka_price', $id_page);
+		$includ_post = get_field('opisanie_bloka_price', $id_page);
+		$includ_content = apply_filters('the_content', $includ_post);
+
+		$array_faq = get_field('faq', $id_page);
+		$faq = [];
+		if ($array_faq) {
+			foreach ($array_faq as $item) {
+				$faq[] = ['question' => $item['vopros'], 'answer' => $item['otvet']];
+			}
+		}
+		$request_title = get_field('zagolovok_zayavka', $id_page);
+		$array_request = get_field('spisok_punktov', $id_page);
+		$request = [];
+		if ($array_request) {
+			foreach ($array_request as $item) {
+				$request[] = $item['nazvanie'];
+			}
+		}
+
+		$request_img = ['url' => get_field('izobrazhenie_razdel_lagerya', $id_page)['url'], 'alt' => get_field('izobrazhenie_razdel_lagerya', $id_page)['title']];
+		$request_link_to_oferta  = get_field('link_to_oferta', $id_page);
+		if (is_string($request_link_to_oferta)) {
+			$request_link_to_oferta2 = explode('contract', $request_link_to_oferta)[1];
+			$request_link_to_oferta = str_replace('/', '', $request_link_to_oferta2);
+		}
+		$past_shifts = [];
+		$args = [
+			'post_type' => 'camp',
+			'numberposts' 	=> -1,
+			'post_status'    => 'draft',
+			'tax_query' => [[
+				'taxonomy' => 'camp-section',
+				'field'    => 'slug',
+				'terms'    => 'professions'
+			]],
+		];
+
+		$posts = query_posts($args);
+		if ($posts) {
+			$i = 0;
+			foreach ($posts as $post) {
+				$id = $post->ID;
+				$thumbnail_url = get_field('image_miniatyura', $id);;
+				// Added to api
+				$past_shifts[$i]['id'] = $id;
+				$past_shifts[$i]['title'] = $post->post_title;
+				$past_shifts[$i]['thumbnail_url'] = ['url' => $thumbnail_url['url'], 'alt' => $thumbnail_url['title']];
+				$past_shifts[$i]['slug'] = $post->post_name;
+
+				$i++;
+			}
+		}
+
+		$shift_selection = [];
+		$args_shift = [
+			'post_type' => 'camp',
+			'numberposts' 	=> -1,
+			'tax_query' => [[
+				'taxonomy' => 'camp-section',
+				'field'    => 'slug',
+				'terms'    => 'professions'
 			]],
 		];
 
@@ -2282,169 +2913,17 @@ function art_page_skills()
 		$data['request_img'] = $request_img;
 		$data['link_to_oferta'] = $request_link_to_oferta;
 
+
 		$data['past_shifts'] = $past_shifts;
-	}
 
-	return $data;
-}
-
-function art_page_professions()
-{
-	$data = [];
-
-	$my_page = get_term_by('slug', 'professions', 'camp-section');
-	if ($my_page) {
-		$id_page = 'term_' . $my_page->term_id . '';
-
-		$background_img = ['url' => get_field('bac_img_section', $id_page)['url'], 'alt' => get_field('bac_img_section', $id_page)['title']];
-		$background_video = get_field('bac_video_section', $id_page);
-
-		$post = get_field('title-section', $id_page);
-		$content = apply_filters('the_content', $post);
-
-		$description_section = get_field('description_section', $id_page);
-		$content_description_section = apply_filters('the_content', $description_section);
-		$izobrazhenie = ['url' => get_field('izobrazhenie', $id_page)['url'], 'alt' => get_field('izobrazhenie', $id_page)['title']];
-		$id_video = get_field('id_video', $id_page);
-
-		$benefits_title = get_field('title_section_block', $id_page);
-		$array_benefits_parents = get_field('preimushhestva_dlya_roditelej', $id_page);
-		$array_benefits_children = get_field('preimushhestva_dlya_detok', $id_page);
-		$benefits_parents = [];
-		$benefits_children = [];
-		if ($array_benefits_parents) {
-			foreach ($array_benefits_parents as $item) {
-				$benefits_parents[] = $item['nazvanie'];
-			}
-		}
-		if ($array_benefits_children) {
-			foreach ($array_benefits_children as $item) {
-				$benefits_children[] = $item['nazvanie'];
-			}
-		}
-		$mesta_prozhivaniya_title = get_field('title_section_block_video', $id_page);
-		$mesta_prozhivaniya_description = get_field('description_section_block_video', $id_page);
-		$array_video_mesta_prozhivaniya = get_field('video_mesta_prozhivaniya', $id_page);
-		$mesta_prozhivaniya = [];
-		if ($array_video_mesta_prozhivaniya) {
-			foreach ($array_video_mesta_prozhivaniya as $item) {
-				$mesta_prozhivaniya[] = [
-					'title' => $item['zagolovok'],
-					'description' => $item['opisanie'],
-					'id_video' => $item['id_video'],
-					'oblozhka' => ['url' => $item['oblozhka']['url'], 'alt' => $item['oblozhka']['title']]
-				];
-			}
-		}
-		$programm_title = get_field('zagolovok_bloka_programm', $id_page);
-		$array_programm = get_field('opisanie_bloka_programm', $id_page);
-		$programm = [];
-		if ($array_programm) {
-			foreach ($array_programm as $item) {
-				$programm[] = $item['nazvanie'];
-			}
-		}
-
-		$programm_img = ['url' => get_field('izobrazhenie_programm', $id_page)['url'], 'alt' => get_field('izobrazhenie_programm', $id_page)['title']];
-
-		$daily_regime_title = get_field('zagolovok_bloka_rezim', $id_page);
-		$array_daily_regime = get_field('rasporyadok_dnya', $id_page);
-		$daily_regime = [];
-		if ($array_daily_regime) {
-			foreach ($array_daily_regime as $item) {
-				$daily_regime[] = $item['vremya_i_meropriyatie'];
-			}
-		}
-
-
-		$includ_title = get_field('zagolovok_bloka_price', $id_page);
-		$includ_post = get_field('opisanie_bloka_price', $id_page);
-		$includ_content = apply_filters('the_content', $includ_post);
-
-		$array_faq = get_field('faq', $id_page);
-		$faq = [];
-		if ($array_faq) {
-			foreach ($array_faq as $item) {
-				$faq[] = ['question' => $item['vopros'], 'answer' => $item['otvet']];
-			}
-		}
-		$request_title = get_field('zagolovok_zayavka', $id_page);
-		$array_request = get_field('spisok_punktov', $id_page);
-		$request = [];
-		if ($array_request) {
-			foreach ($array_request as $item) {
-				$request[] = $item['nazvanie'];
-			}
-		}
-
-		$request_img = ['url' => get_field('izobrazhenie_razdel_lagerya', $id_page)['url'], 'alt' => get_field('izobrazhenie_razdel_lagerya', $id_page)['title']];
-		$request_link_to_oferta  = get_field('link_to_oferta', $id_page);
-
-		$past_shifts = [];
-		$args = [
-			'post_type' => 'camp',
-			'numberposts' 	=> -1,
-			'post_status'    => 'draft',
-			'tax_query' => [[
-				'taxonomy' => 'camp-section',
-				'field'    => 'slug',
-				'terms'    => 'professions'
-			]],
+		$metadata = [
+			'title' => get_field('title_meta', $id_page),
+			'description' => get_field('description_meta', $id_page),
+			'keywords' => get_field('keywords_meta', $id_page),
+			'image' => get_field('img_meta', $id_page),
 		];
 
-		$posts = query_posts($args);
-		if ($posts) {
-			$i = 0;
-			foreach ($posts as $post) {
-				$id = $post->ID;
-				$thumbnail_url = get_field('image_miniatyura', $id);;
-				// Added to api
-				$past_shifts[$i]['id'] = $id;
-				$past_shifts[$i]['title'] = $post->post_title;
-				$past_shifts[$i]['thumbnail_url'] = ['url' => $thumbnail_url['url'], 'alt' => $thumbnail_url['title']];
-				$past_shifts[$i]['slug'] = $post->post_name;
-
-				$i++;
-			}
-		}
-
-
-		$data['id_page'] = $my_page->term_id;
-		$data['background_img'] = $background_img;
-		$data['background_video'] = $background_video;
-		$data['content'] = $content;
-
-		$data['description_text'] = $content_description_section;
-		$data['description_img'] = $izobrazhenie;
-		$data['description_video'] = $id_video;
-
-		$data['benefits_title'] = $benefits_title;
-		$data['benefits_parents'] = $benefits_parents;
-		$data['benefits_children'] = $benefits_children;
-
-		$data['prozhivanie_title'] = $mesta_prozhivaniya_title;
-		$data['prozhivanie_description'] = $mesta_prozhivaniya_description;
-		$data['mesta_prozhivaniya'] = $mesta_prozhivaniya;
-
-		$data['programm_title'] = $programm_title;
-		$data['programm'] = $programm;
-		$data['programm_img'] = $programm_img;
-
-		$data['daily_regime_title'] = $daily_regime_title;
-		$data['daily_regime'] = $daily_regime;
-
-		$data['includ_title'] = $includ_title;
-		$data['includ_content'] = $includ_content;
-
-		$data['faq'] = $faq;
-
-		$data['request_title'] = $request_title;
-		$data['request'] = $request;
-		$data['request_img'] = $request_img;
-		$data['link_to_oferta'] = $request_link_to_oferta;
-		
-
-		$data['past_shifts'] = $past_shifts;
+		$data['metadata'] = $metadata;
 	}
 
 	return $data;
@@ -2545,6 +3024,10 @@ function art_page_tourist_holidays()
 
 		$request_img = ['url' => get_field('izobrazhenie_razdel_lagerya', $id_page)['url'], 'alt' => get_field('izobrazhenie_razdel_lagerya', $id_page)['title']];
 		$request_link_to_oferta  = get_field('link_to_oferta', $id_page);
+		if (is_string($request_link_to_oferta)) {
+			$request_link_to_oferta2 = explode('contract', $request_link_to_oferta)[1];
+			$request_link_to_oferta = str_replace('/', '', $request_link_to_oferta2);
+		}
 
 		$past_shifts = [];
 		$args = [
@@ -2575,6 +3058,111 @@ function art_page_tourist_holidays()
 			}
 		}
 
+		$shift_selection = [];
+		$args_shift = [
+			'post_type' => 'camp',
+			'numberposts' 	=> -1,
+			'tax_query' => [[
+				'taxonomy' => 'camp-section',
+				'field'    => 'slug',
+				'terms'    => 'tourist-holidays'
+			]],
+		];
+
+		$posts_shift = query_posts($args_shift);
+		if ($posts_shift) {
+			$i = 0;
+
+			foreach ($posts_shift as $post) {
+				$id = $post->ID;
+				$card_profstart_array = get_field('profstart_cards', $id);
+				$card_profstart = [];
+				if ($card_profstart_array) {
+					foreach ($card_profstart_array as $item) {
+						$img_shift = $item['image_card'];
+
+						$course_ages = $item['vozrast'];
+						$period_ages = [];
+						$name_ages = [];
+						if ($course_ages) {
+							$pattern = '/[^0-9]/';
+
+							foreach ($course_ages as $item12) {
+								$name_ages[] = (int)preg_replace($pattern, "", $item12->name);
+							}
+							$period_ages = min($name_ages) . '-' . max($name_ages) . ' лет';
+						}
+
+						$card_profstart[] = [
+							'title' => $item['title_card'],
+							'period' => get_field('period', $id),
+							'location' => get_field('location', $id),
+							'ages' => $name_ages,
+							'description' => $item['description_card'],
+							'seats' => $item['nalichie_mest_card'],
+							'price' => get_field('change_price', $id),
+							'price_certificate' => get_field('price_per_certificate', $id),
+							'thumbnail_url' => ['url' => $img_shift['url'], 'alt' => $img_shift['title']],
+							'age_title' => $period_ages,
+						];
+					}
+				}
+
+				$card_profi_array = get_field('profi_cards', $id);
+				$card_profi = [];
+				if ($card_profi_array) {
+
+					foreach ($card_profi_array as $item) {
+						$img_shift = $item['image_card'];
+
+						$course_ages = $item['vozrast'];
+						$period_ages = [];
+						$name_ages = [];
+						if ($course_ages) {
+							$pattern = '/[^0-9]/';
+							foreach ($course_ages as $item12) {
+								$name_ages[] = (int)preg_replace($pattern, "", $item12->name);
+							}
+							$period_ages = min($name_ages) . '-' . max($name_ages) . ' лет';
+						}
+
+						$card_profi[] = [
+							'title' => $item['title_card'],
+							'period' => get_field('period', $id),
+							'location' => get_field('location', $id),
+							'ages' => $name_ages,
+							'description' => $item['description_card'],
+							'seats' => $item['nalichie_mest_card'],
+							'price' => get_field('change_price', $id),
+							'price_certificate' => get_field('price_per_certificate', $id),
+							'thumbnail_url' => ['url' => $img_shift['url'], 'alt' => $img_shift['title']],
+							'age_title' => $period_ages,
+						];
+					}
+				}
+
+				$profi_array = [
+					'description' => get_field('description_box_profi', $id),
+					'card' => $card_profi
+				];
+				$profstart_array = [
+					'description' => get_field('description_box_profstart', $id),
+					'card' => $card_profstart
+				];
+				// Added to api
+				$shift_selection[$i]['id'] = $id;
+				$shift_selection[$i]['title'] = $post->post_title;
+				$shift_selection[$i]['slug'] = $post->post_name;
+				$shift_selection[$i]['price'] = get_field('change_price', $id);
+				$shift_selection[$i]['price_certificate'] = get_field('price_per_certificate', $id);
+				$shift_selection[$i]['no_certificate'] = get_field('text_without_action', $id);
+				$shift_selection[$i]['profi'] = $profi_array;
+				$shift_selection[$i]['profstart'] = $profstart_array;
+
+				$i++;
+			}
+		}
+
 		$data['id_page'] = $my_page->term_id;
 		$data['background_img'] = $background_img;
 		$data['background_video'] = $background_video;
@@ -2583,6 +3171,8 @@ function art_page_tourist_holidays()
 		$data['description_text'] = $content_description_section;
 		$data['description_img'] = $izobrazhenie;
 		$data['description_video'] = $id_video;
+
+		$data['shift_selection'] = $shift_selection;
 
 		$data['benefits_title'] = $benefits_title;
 		$data['benefits_parents'] = $benefits_parents;
@@ -2610,6 +3200,15 @@ function art_page_tourist_holidays()
 		$data['link_to_oferta'] = $request_link_to_oferta;
 
 		$data['past_shifts'] = $past_shifts;
+
+		$metadata = [
+			'title' => get_field('title_meta', $id_page),
+			'description' => get_field('description_meta', $id_page),
+			'keywords' => get_field('keywords_meta', $id_page),
+			'image' => get_field('img_meta', $id_page),
+		];
+
+		$data['metadata'] = $metadata;
 	}
 
 	return $data;
@@ -2652,6 +3251,15 @@ function art_page_doc_post($slug)
 		$data['subtitle_docs'] = $subtitle_docs;
 		$data['content'] = $content;
 		$data['docs'] = $arrayDocs;
+
+		$metadata = [
+			'title' => get_field('title_meta', $id),
+			'description' => get_field('description_meta', $id),
+			'keywords' => get_field('keywords_meta', $id),
+			'image' => get_field('img_meta', $id),
+		];
+
+		$data['metadata'] = $metadata;
 	}
 
 	return $data;
@@ -2745,7 +3353,9 @@ function art_camp_filter($params)
 
 			$data[$i]['id'] = $id;
 			$data[$i]['post_title'] = $camp->post_title;
-			$data[$i]['post_slug'] = $camp->post_name;
+			// $data[$i]['camp_section'] = $section;
+			// $data[$i]['term_id'] = $section;
+			$data[$i]['post_slug'] = $section . '/' . $camp->post_name;
 			$data[$i]['location'] = get_field('location', $id);
 			$data[$i]['thumbnail'] = ['url' => $thumbnail['url'], 'alt' => $thumbnail['title']];
 
@@ -2785,6 +3395,15 @@ function art_page_camp_post($slug)
 		$data['slug'] = $post[0]->post_name;
 		$data['content'] = $content;
 		$data['photo_slider'] = $slider;
+
+		$metadata = [
+			'title' => get_field('title_meta', $id),
+			'description' => get_field('description_meta', $id),
+			'keywords' => get_field('keywords_meta', $id),
+			'image' => get_field('img_meta', $id),
+		];
+
+		$data['metadata'] = $metadata;
 	}
 
 	return $data;
@@ -2956,6 +3575,15 @@ function art_page_camp()
 		$data['merch'] = $merch;
 		$data['docs'] = $arrayDocs;
 		$data['filter'] = $filter;
+
+		$metadata = [
+			'title' => get_field('title_meta', $id_page),
+			'description' => get_field('description_meta', $id_page),
+			'keywords' => get_field('keywords_meta', $id_page),
+			'image' => get_field('img_meta', $id_page),
+		];
+
+		$data['metadata'] = $metadata;
 	}
 
 	return $data;
@@ -2992,6 +3620,15 @@ function art_page_contacts()
 		$data['working_hours'] = $working_hours;
 		$data['gallery_contacts'] = $gallery_contacts;
 		$data['image_ofise'] = ['url' => $image_ofise['url'], 'alt' => $image_ofise['title']];
+
+		$metadata = [
+			'title' => get_field('title_meta', $id_contacts),
+			'description' => get_field('description_meta', $id_contacts),
+			'keywords' => get_field('keywords_meta', $id_contacts),
+			'image' => get_field('img_meta', $id_contacts),
+		];
+
+		$data['metadata'] = $metadata;
 	}
 
 	return $data;
@@ -3035,6 +3672,15 @@ function art_page_home()
 		$data['id_video'] = $id_video;
 		$data['content'] = $content;
 		$data['sections'] = $sections;
+
+		$metadata = [
+			'title' => get_field('title_meta', $id_front_page),
+			'description' => get_field('description_meta', $id_front_page),
+			'keywords' => get_field('keywords_meta', $id_front_page),
+			'image' => get_field('img_meta', $id_front_page),
+		];
+
+		$data['metadata'] = $metadata;
 	}
 
 	$my_page = get_page_by_path('contacts', OBJECT, 'page');
@@ -3097,6 +3743,15 @@ function art_page_blogs()
 			'background_video' => $background_video,
 			'posts' => $data2
 		];
+
+		$metadata = [
+			'title' => get_field('title_meta', $id_page),
+			'description' => get_field('description_meta', $id_page),
+			'keywords' => get_field('keywords_meta', $id_page),
+			'image' => get_field('img_meta', $id_page),
+		];
+
+		$data['metadata'] = $metadata;
 	}
 
 	return $data;
@@ -3122,6 +3777,15 @@ function art_page_blogs_post($slug)
 		$data['slug'] = $post[0]->post_name;
 		$data['get_the_post_thumbnail_url'] = $get_the_post_thumbnail_url;
 		$data['content'] = $content;
+
+		$metadata = [
+			'title' => get_field('title_meta', $id),
+			'description' => get_field('description_meta', $id),
+			'keywords' => get_field('keywords_meta', $id),
+			'image' => get_field('img_meta', $id),
+		];
+
+		$data['metadata'] = $metadata;
 	}
 	return $data;
 }
@@ -3205,6 +3869,10 @@ function art_page_psychologist()
 		}
 		$img_steps_form = get_field('bg-form-psychologist', $id_page);
 		$link_to_oferta = get_field('link_to_oferta', $id_page);
+		if (is_string($link_to_oferta)) {
+			$link_to_oferta2 = explode('contract', $link_to_oferta)[1];
+			$link_to_oferta = str_replace('/', '', $link_to_oferta2);
+		}
 
 		$data['id_page'] = $id_page;
 		$data['content'] = $content;
@@ -3221,6 +3889,15 @@ function art_page_psychologist()
 		$data['steps_form_items'] = $steps_form_items;
 		$data['img_steps_form'] = ['url' => $img_steps_form['url'], 'alt' => $img_steps_form['title']];
 		$data['link_to_oferta'] = $link_to_oferta;
+
+		$metadata = [
+			'title' => get_field('title_meta', $id_page),
+			'description' => get_field('description_meta', $id_page),
+			'keywords' => get_field('keywords_meta', $id_page),
+			'image' => get_field('img_meta', $id_page),
+		];
+
+		$data['metadata'] = $metadata;
 	}
 
 	return $data;
